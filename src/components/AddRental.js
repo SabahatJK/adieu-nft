@@ -39,9 +39,9 @@ class AddRental extends Component {
           tokenId : -1,
           tokenURI: '',
           submitDisabled : false,
-          isDeposit : 'hidden',
-          isRent : 'hidden',
-          isSubmit : '',
+          isDeposit : false,
+          isRent : false,
+          isSubmit : true,
           errors : ''
 
         };
@@ -126,9 +126,9 @@ getToken = async(tokenId) => {
       // get the token address from the BookingManager Contract
       const tokenAddr = await this.state.bookingInstance.methods.getTokenAddress(tokenId).call();
       this.setState({tokenAddr : "Please add the token to your metamask, to see your minted token : " + tokenAddr})
-      this.setState({isRent : 'hidden'})
-      this.setState({isDeposit : 'hidden'})
-      this.setState({isSubmit : ''})
+      this.setState({isRent : false})
+      this.setState({isDeposit : false})
+      this.setState({isSubmit : true})
 
     } catch (error) {
       this.setState({errors: error.message})
@@ -211,9 +211,9 @@ rent = async(tokenId) => {
       });
 
       this.setState({rentalTxHash : "Rent Tx Hash: " + txtHash})
-      this.setState({isRent : 'hidden'})
-      this.setState({isDeposit : 'hidden'})
-      this.setState({isSubmit : ''})
+      this.setState({isRent : false})
+      this.setState({isDeposit : false})
+      this.setState({isSubmit : true})
 
       self.setState({submitDisabled : false})
     }
@@ -240,8 +240,9 @@ deposit = async(tokenId) => {
           txtHash = receipt["transactionHash"]
           console.log(receipt["transactionHash"])
           self.setState({tokenId : tokenId})
-          self.setState({isRent : ''})
-          self.setState({isDeposit : 'hidden'})
+          self.setState({isRent : true})
+          self.setState({isDeposit : false})
+          self.setState({isSubmit : false})
           self.rent(tokenId)
       });
 
@@ -262,7 +263,7 @@ deposit = async(tokenId) => {
 async handleSubmit(event) {
     event.preventDefault()
     this.setState({errors : ''})
-    if (this.state.isSubmit === '')
+    if (this.state.isSubmit === true)
       {
         if (Number(this.props.endDate) < (Number(this.state.startDate)  + Number(this.state.noOfWeeks*7*24*60*60)))
         {
@@ -313,8 +314,9 @@ async handleSubmit(event) {
                               });
 
           this.setState({reservTxHash : "Reservation Tx: " + txtHash})
-          this.setState({isDeposit : ''})
-          this.setState({isSubmit : 'hidden'})
+          this.setState({isRent : false})
+          this.setState({isDeposit : true})
+          this.setState({isSubmit : false})
 
         } catch(error) {
             strMessage = error.message;
@@ -336,8 +338,9 @@ async handleSubmit(event) {
   // open Modal
     openModal = () => {
         this.setState({ modalIsOpen: true });
-        this.setState({isSubmit : ''})
-        this.setState({isDeposit : 'hidden'})
+        this.setState({isSubmit : true})
+        this.setState({isDeposit : false})
+        this.setState({isRent : false})
         this.setState({reservTxHash : ''})
         this.setState({depositTxHash : ''})
         this.setState({tokenURI : ''})
@@ -435,22 +438,24 @@ async handleSubmit(event) {
                 </tr>
                 <tr>
                  <td>
+                 {this.state.isSubmit &&
                  <button type="submit" className="blackSubmit"
                         disabled={this.state.submitDisabled}
-                        hidden={this.state.isSubmit}>
+                        >
                         Submit
-                </button>
-                <button type="submit" className="blackSubmit"
+                </button>}
+                {this.state.isDeposit && <button type="submit" className="blackSubmit"
                         disabled={this.state.submitDisabled}
                         onClick={() =>this.deposit(this.state.tokenId)}
-                        hidden={this.state.isDeposit}>
+                        >
                        Deposit
-               </button>
+               </button>}
+               {this.state.isRent &&
                <button type="submit" className="blackSubmit"
                     disabled={this.state.submitDisabled} onClick={() =>this.rent(this.state.tokenId)}
-                    hidden={this.state.isRent}>
+                    >
                       Rent
-              </button>
+              </button>}
 
                 </td>
                 </tr>
@@ -466,13 +471,6 @@ async handleSubmit(event) {
                     <br/>
                     <b><label>{this.state.tokenAddr} </label></b>
                   </div>
-                </tr>
-                <tr>
-                  <td colspan="2">
-                      <label id="lblerror" >{this.state.error}</label>
-
-                  </td>
-
                 </tr>
               </tbody>
             </table>

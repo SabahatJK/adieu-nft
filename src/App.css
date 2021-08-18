@@ -3,7 +3,7 @@ html,body {
   margin:0;
   padding:0;
   height:100%; /* needed for container min-height */
-  font-family: sans-serif;
+  font-family: "Open Sans", Tahoma, Geneva, sans-serif;
   font-size: 13px;
 }
 
@@ -17,7 +17,7 @@ navigation a {
   background-color: white;
   color: #DB7093;
 
-  
+
 }
 
 .container {
@@ -44,8 +44,10 @@ nav {
 }
 .about {
   width:600px;
-  margin: 50px 50px 50px 50px;
+  margin: 20px 50px 10px 50px;
+  text-align: justify;
 }
+
 
 footer {
   position: fixed;
@@ -58,5 +60,5 @@ footer {
   font-size:1.0em;
   text-align: center;
   line-height:20px;
-  
+
   }

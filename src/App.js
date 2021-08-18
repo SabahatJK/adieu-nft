@@ -109,7 +109,8 @@ const connectWalletPressed = async () => {
               <table width="50%" align="center">
                 <tr>
                     <td>
-                      <Link to="/About">About Us</Link>
+
+                      <Link to={{pathname:"/About"}}>About</Link>
                     </td>
                     <td>
                     <Link to="/Rental">Want to rent?</Link>
@@ -127,8 +128,12 @@ const connectWalletPressed = async () => {
                 <Route exact path="/">
                   <Redirect to="/About" />
                 </Route>
-                <Route exact path='/About' component={About}></Route>
-                <Route exact path='/AddListing' component={AddListing}></Route>
+                <Route exact path='/About' >
+                    <About account={walletAddress} />
+                </Route>
+                <Route exact path='/AddListing' >
+                  <AddListing account={walletAddress}/>
+                </Route>
                 <Route exact path='/Rental' component={Rental}></Route>
                 <Route exact path='/MyRentals' component={MyRentals}></Route>
                 <Route exact path='/FastForward' component={FastForward}></Route>

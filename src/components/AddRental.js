@@ -359,8 +359,8 @@ async handleSubmit(event) {
         <button onClick={this.openModal} className="blackSubmit"> Rent </button>
         <Modal isOpen={this.state.modalIsOpen} onRequestClose={this.closeModal} ariaHideApp={false}>
           <form onSubmit={this.handleSubmit}>
-            <table  width="99%" blackHeader>
-              <tbody>
+            <table  width="99%">
+              <thead>
                 <tr className="blackHeader">
                     <td align="left"><div> {this.props.propertAddress} </div>
                     </td>
@@ -369,6 +369,9 @@ async handleSubmit(event) {
                     </td>
 
                 </tr>
+
+              </thead>
+              <tbody>
                 <tr>
                   <td colSpan="2">
                   { this.state.errors.length > 0  &&

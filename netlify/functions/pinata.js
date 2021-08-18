@@ -16,8 +16,8 @@ exports.handler = async function (event, context) {
 
     const url = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
     // get the enviroment varaibles from the .env file
-    const key = process.env.REACT_APP_PINATA_KEY;
-    const secret = process.env.REACT_APP_PINATA_SECRET;
+    const key = process.env.PINATA_KEY;
+    const secret = process.env.PINATA_SECRET;
     console.log(event);
     //making axios POST request to Pinata ⬇️
     try {

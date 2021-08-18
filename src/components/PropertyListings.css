@@ -8,9 +8,9 @@ td {
 
 .table_padding
 {
-width:10px;
-height:10px;
-padding: 10px 10px 10px 10px;
+  width:10px;
+  height:10px;
+  padding: 10px 10px 10px 10px;
 }
 
 .bold {
@@ -25,8 +25,6 @@ padding: 10px 10px 10px 10px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-family: sans-serif;
-    font-size: 13px;
   }
 
   .blackSubmit {
@@ -37,17 +35,15 @@ padding: 10px 10px 10px 10px;
     text-align: center;
     text-decoration: none;
     display: inline-block;
-    font-family: sans-serif;
-    font-size: 13px;
   }
 .blackHeader{
     background-color: black; /* Green */
     border: none;
     color: #ffc40c;
-    padding: 5px 32px;
-    font-family: sans-serif;
-    font-size: 13px;
-    padding-left: 3px;
+  }
+  .blackTitleBar{
+      background-color: black; /* Green */
+      color: #ffc40c;
   }
 
 .rentaltable

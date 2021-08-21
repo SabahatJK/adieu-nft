@@ -1,5 +1,4 @@
-
-import React, { Component } from 'react';
+import React, { useState, useEffect, useRef ,useContext } from "react";
 import Web3 from 'web3'
 import './PropertyListings.css'
 
@@ -9,94 +8,184 @@ import {
 } from "./connection.js";
 
 import { BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS } from '../config'
+import WalletContext from './context';
+import {extractBlockchainError} from './connection'
 import moment from 'moment';
 
+import { withStyles, makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import Paper from '@material-ui/core/Paper';
+import { ThemeProvider } from '@material-ui/core'
+import Button from '@material-ui/core/Button';
 
 
-class MyRentals extends Component {
-
-  constructor(props) {
-    super(props)
-    this.state = {
-      account: '',
-      bookingCount: 0,
-      bookings: [],
-      error : ''
-    };
+import Snackbar from '@material-ui/core/Snackbar';
+import Slide from '@material-ui/core/Slide';
+import Backdrop from '@material-ui/core/Backdrop';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 
-  }
 
-  componentWillMount() {
-    this.init()
-  }
+const StyledTableCell = withStyles((theme) => ({
+  head: {
+    backgroundColor: theme.palette.common.black,
+    color: theme.palette.common.white,
+  },
+  body: {
+//    fontSize: 14,
+  },
+}))(TableCell);
 
-  addWalletListener = () => {
-    if (window.ethereum) {
-      var self = this;
-      window.ethereum.on("accountsChanged", (accounts) => {
-        if (accounts.length > 0) {
-          self.setState({account : accounts[0]})
-          self.loadBlockchainData()
-        } else {
-          self.state.setState({account : accounts[0]})
+const StyledTableRow = withStyles((theme) => ({
+  root: {
+    '&:nth-of-type(odd)': {
+      backgroundColor: theme.palette.action.hover,
+    },
+  },
+}))(TableRow);
+
+const theme = createMuiTheme({
+    overrides: {
+        MuiTableCell: {
+            root: {  //This can be referred from Material UI API documentation.
+                padding: '5px',
+                width: '600px'
+            },
+        },
+      MuiTableContainer: {
+        root: {  //This can be referred from Material UI API documentation.
+
+          width: '90%',
         }
-      });
-    }
-  };
+      }
+    },
+});
 
-  init = async() =>  {
-    connectWallet();
-    const {address, status} = await getCurrentWalletConnected();
-    this.addWalletListener();
-    this.setState({account : address})
-    this.loadBlockchainData();
+const useStyles = makeStyles((theme) => ({
+  backdrop: {
+    zIndex: theme.zIndex.drawer + 1,
+    color: '#fff',
+  },
+  root: {
+    '& > *': {
+      margin: theme.spacing(1),
+      width: '25ch',
+    },
+  },
+  table: {
+    minWidth: 700,
+  },
+
+}));
+
+function TransitionLeft(props) {
+  return <Slide {...props} direction="left" />;
+}
+
+function TransitionUp(props) {
+  return <Slide {...props} direction="up" />;
+}
+
+function TransitionRight(props) {
+  return <Slide {...props} direction="right" />;
+}
+
+function TransitionDown(props) {
+  return <Slide {...props} direction="down" />;
+}
+
+function MyRentals(props)  {
+  const classes = useStyles();
+
+  const [openBackdrop, setOpenBackdrop] = useState(false);
+  const [openTransition, setOpenTransition] = useState(false);
+  const [transition, setTransition] = useState(undefined);
+  const [transitionMessage, setTransitionMessage] = useState("");
+
+  const[disabled, setDisabled] = useState("");
+
+  const [walletAddress, setWallet] = useState("");
+  const [bookingCount, setBookingCount] = useState("");
+  const [bookings, setBookings] = useState([]);
+  const [error, setError] = useState('');
+  //const [web3, setWeb3] = useState(null);
+  const [bookingInstance, setBookingInstance] = useState(null);
+
+  const [reservTxHash, setReservTxHash] = useState("");
+  const [depositTxHash, setDepositTxHash] = useState("");
+  const [rentalTxHash, setRentalTxHash] = useState("");
+
+  const [tokenAddr, setTokenAddr] = useState("");
+  const [tokenId, setTokenId] = useState(1);
+  const [tokenURI, setTokenURI] = useState("");
+
+  const [submitDisabled, setSubmitDisabled] = useState(false);
+  const [status, setStatus] = useState("");
+  const [isRent, setIsRent] = useState(false);
+  const [isSubmit, setIsSubmit] = useState(true);
+  const [counter, setSetCounter]  = useState(0);
+
+  const [isUpdated, setIsUpdated] = useState(false);
+
+  const walletInfo = useContext(WalletContext);
+  const myBookingRef = useRef(bookings);
+
+ useEffect(() => {
+      setWallet(walletInfo);
+      loadBlockchainData(walletInfo);
+ }, [walletInfo]);
 
 
-  }
+async function loadBlockchainData(address)  {
 
-loadBlockchainData = async() => {
-   if (this.state.account !== "")
-   {
-     this.setState({error : ''})
-    this.setState({bookings : []})
+    setError('');
+    //setBookings([]);
+
     const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
     const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
-    this.setState({web3})
-    this.setState({bookingInstance})
-    const bookingCount = await bookingInstance.methods.getCntForTenant(this.state.account).call()
-    this.setState({ bookingCount})
-    for (var i = 0; i < this.state.bookingCount; i++) {
+    //setWeb3(web3);
+    setBookingInstance(bookingInstance);
+    const bookingCount = await bookingInstance.methods.getCntForTenant(address).call({from: address});
+    setBookingCount(bookingCount);
+    let newBookings = [];
+    var i  = 0;
+    for (i = 0; i < bookingCount; i++) {
       try {
-      const index = await bookingInstance.methods.tenantTokens(this.state.account, i).call()
 
-      const booking = await bookingInstance.methods.getDetails(index).call()
-
-      const isRefund = await bookingInstance.methods.getRefund(booking.tokenid).call()
-      booking.isRefund = isRefund
-      this.setState({test: booking.isRefund})
-      this.setState({
-        bookings: [...this.state.bookings, booking]
-      });
-
-
+      const index = await bookingInstance.methods.tenantTokens(address, i).call({from: address})
+      const booking = await bookingInstance.methods.getDetails(index).call({from: address})
+      const isRefund = await bookingInstance.methods.getRefund(booking.tokenid).call({from: address})
+      booking.isRefund = isRefund;
+      booking.isToken = (booking._status === "3") ? true : false;
+      setSetCounter(i)
+      newBookings = newBookings.concat( booking);
       }
       catch(error) {
-        //this.setState({error: error.message})
+        //alert("An error occured while loading data : " + " i " + error.message);
+        let sError = extractBlockchainError(error.message);
+        setError(" Load Data from Blockchain @ index " + i + " : " + sError);
         continue;
       }
-
+      setBookings(newBookings);
     };
-  }
-};
 
-generateTokenURI = async() => {
+};
+function sleep(milliseconds)  {
+  return new Promise(resolve => setTimeout(resolve, milliseconds))
+}
+async function generateTokenURI() {
    //make metadata
+
   const JSONBody = {
-    name : 'Adieu Token :' + this.props.propertAddress,
-    property : this.props.propertAddress,
-    startDate : this.state.startDate,
-    noOfWeeks : this.state.noOfWeeks
+    name : 'Adieu Token :' + props.propertAddress,
+    property : props.propertAddress,
+    startDate : props.startDate,
+    noOfWeeks : props.noOfWeeks
   }
 
   //make pinata call
@@ -107,205 +196,243 @@ generateTokenURI = async() => {
                           }).then((res) => res.json());
   console.log(pinataResponse)
   if (!pinataResponse.success) {
-          this.setState({error: "😢 Something went wrong while uploading your tokenURI."})
-
-
+      setError("😢 Something went wrong while uploading your tokenURI. Error : " + pinataResponse.message )
   }
   else {
-  var tokenURI = pinataResponse.pinataUrl;
-  this.setState({tokenURI : "Token URI @Pinata : " + tokenURI})
-  return tokenURI;
+    var tokenURI = pinataResponse.pinataUrl;
+    setOpenTransition(false);
+    await sleep(1000);
+    setTokenURI(tokenURI);
+    setTransitionMessage("Token URI : "  + tokenURI );
+    setOpenTransition(true);
+    setTransition(() => TransitionUp);
+    return tokenURI;
 }
 }
 
-rent = async(tokenId, rent, noOfWeeks) => {
+async function payRent(tokenId, rent, noOfWeeks, key) {
   if (tokenId > 0 )
   {
-    var self = this;
-    let txtHash;
-    const tokenURI = this.generateTokenURI();
-    // call blockchain async and wait till done
-    await this.state.bookingInstance.methods.rent(
-      tokenId, tokenURI).send(
-      {from: this.state.account,
-      value: rent})
-      .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
-        alert(JSON.parse(JSON.stringify(error))["message"]);
-        console.log(error)
-        self.setState({error: JSON.parse(JSON.stringify(error))["message"]})
-      })
-      // Once done, get the transaction hash and call getToken to get the
-      // address of the token just minted
-      .then(function(receipt){
-        console.log("receipt")
-        txtHash = receipt["transactionHash"]
-        console.log(receipt["transactionHash"])
-        self.loadBlockchainData()
-    });
-  this.setState({rentalTxHash : "Rent Tx Hash: " + txtHash})
+    setOpenBackdrop(true);
+    try {
 
+        const tokenURI = generateTokenURI();
+        // call blockchain async and wait till done
+        await bookingInstance.methods.rent(
+          tokenId, tokenURI).send(
+          {from: walletAddress,
+          value: rent})
+          .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
+            alert(JSON.parse(JSON.stringify(error))["message"]);
+            console.log(error)
+            setError(JSON.parse(JSON.stringify(error))["message"])
+          })
+          // Once done, get the transaction hash and call getToken to get the
+          // address of the token just minted
+          .then(function(receipt){
+            setOpenTransition(false);
+            console.log("receipt")
+            let txtHash = receipt["transactionHash"]
+            setRentalTxHash(txtHash);
+            setTransitionMessage("Rent receipt TX hash : "  + txtHash );
+            setTransition(() => TransitionRight);
+            setOpenTransition(true);
+            setIsRent(false);
+            setOpenBackdrop(false);
+            bookings[key]._status = '3';
+            bookings[key].tokenURI = tokenURI;
+            setBookings(bookings)
+
+            //loadBlockchainData();
+        });
+
+    } catch (error) {
+        setError("An error occured @ the deposit stage. Error : " + error.message)
+        alert("SAn error occured @ the deposit stage. Error : " + error.message);
+        setOpenBackdrop(false);
+
+    } finally {
+
+    }
   }
 }
 
 // Connect to metmask and pay the required depoist
 // Wait untill done and then call
-deposit = async(tokenId, deposit, rent, noOfWeeks) => {
+async function payDeposit(tokenId, deposit, rent, noOfWeeks, key){
   if (tokenId > 0 )
   {
-      var self = this;
-      //this.setState({TokenId, tokenId})
-      let txtHash;
+      setOpenBackdrop(true);
       try{
-          await this.state.bookingInstance.methods.deposit(
-          tokenId).send(
-          {from: this.state.account,
-          value: deposit}).then(function(receipt){
-            txtHash = receipt["transactionHash"]
-            console.log(receipt["transactionHash"])
-            self.rent(tokenId, rent, noOfWeeks)
-        });
-        this.loadBlockchainData();
-        this.setState({depositTxHash : "Deposit Tx Hash: " + txtHash})
 
+          await bookingInstance.methods.deposit(
+          tokenId).send(
+          {from: walletAddress,
+          value: deposit}).then(function(receipt){
+            let txtHash = receipt["transactionHash"]
+            setDepositTxHash("Deposit Tx Hash: " + txtHash)
+            //setStatus(2);
+            console.log(receipt["transactionHash"]);
+            setOpenTransition(false);
+            setTransitionMessage("Deposit receipt TX hash : "  + txtHash );
+            setOpenTransition(true);
+            setTransition(() => TransitionRight);
+
+            bookings[key]._status = '2';
+            setBookings(bookings);
+
+            payRent(tokenId, rent, noOfWeeks, key);
+        });
+        //loadBlockchainData();
       }
       catch(error) {
-        alert("Error Occured : " + error.message);
-        this.setState({error: error.message})
-
+        setError("An error occured @ the deposit stage. Error : " + error.message)
+        alert("An error occured @ the deposit stage. Error : " + error.message);
+        setOpenBackdrop(false);
       }
   }
 
 }
 // Get the token Address from blockchain, so can be added to the metamask
 
-refund = async(tokenId, deposit, noOfWeeks) => {
+async function refund(tokenId, deposit, noOfWeeks, key){
   if (tokenId > 0 )
   {
-      var self = this;
-      //this.setState({TokenId, tokenId})
-      let txtHash;
+      setOpenBackdrop(true);
       try{
-        await this.state.bookingInstance.methods.refund(
+        await bookingInstance.methods.refund(
         tokenId).send(
-        {from: this.state.account}).then(function(receipt){
-          txtHash = receipt["transactionHash"]
+        {from: walletAddress}).then(function(receipt){
+          let txtHash = receipt["transactionHash"]
           console.log(receipt["transactionHash"])
-          self.loadBlockchainData()
+          loadBlockchainData()
       });
     }
     catch(error) {
-      this.setState({error: error.message})
-
+      setError("An error occured @ the Refund transaction. Error : " + error.message)
+      setOpenBackdrop(false);
     }
   }
 }
 //booking._status,booking.tokenid, booking._rent, booking._deposit,noOfWeeks
-getStatus =(status, tokenId, rent, deposit, noOfWeeks ) => {
+function getStatusButton(status, tokenId, rent, deposit, noOfWeeks, key ) {
+  switch(status) {
+    case '0':
+      return "Non Refundable FeeRequired"
+    case '1':
+      return <Button  variant="contained"   onClick={() => payDeposit(tokenId, deposit, rent, noOfWeeks, key)}>Deposit</Button>
+    case '2':
+      return <Button variant="contained"   onClick={() => payRent(tokenId, rent, noOfWeeks, key)}>Rent</Button>
+    default:
+      return "----"
+  }
+
+}
+function getStatus(status, tokenId, rent, deposit, noOfWeeks ) {
   switch(status) {
     case '0':
       return 'Non Refundable FeeRequired'
     case '1':
-      return <button  className="blackSubmit" onClick={ () =>this.deposit(tokenId, deposit, rent, noOfWeeks)}>Deposit</button>
+      return "Deposit Required"
     case '2':
-      return <button  className="blackSubmit" onClick={ () =>this.rent(tokenId, rent, noOfWeeks)}>Rent</button>
+      return 'Rent Required'
     default:
       return 'Rented'
   }
 
 }
-
-
-
-//booking._status,booking.tokenid, booking._rent, booking._deposit,noOfWeeks
-showWidthdraw = (tokenId, startDate, noOfWeeks, deposit, isRefund ) => {
-  var current = moment().format("L");
-  if (moment(current).unix() >  (Number(startDate) + Number(noOfWeeks)*7*24*60*60 + 5*24*60*60) )
-  {
-    if (isRefund)
-      return <button  className="blackSubmit" onClick={() =>this.refund(tokenId, deposit, noOfWeeks)}>Refund</button>
-    else
-      return ''
-  }
+const handleCloseTransition= () => {
+  setOpenTransition(false);
 };
 
 
 
-render() {
+//booking._status,booking.tokenid, booking._rent, booking._deposit,noOfWeeks
+function showWidthdraw(tokenId, startDate, noOfWeeks, deposit, isRefund, key )  {
+  var current = moment().format("L");
+  if (moment(current).unix() >  (Number(startDate) + Number(noOfWeeks)*7*24*60*60 + 5*24*60*60) )
+  {
+    if (isRefund)
+      return <Button  variant="contained"
+          onClick={() =>refund(tokenId, deposit, noOfWeeks, key)}>Refund</Button>
+    else
+      return '----'
+  }
+};
     return (
       <div>
-        <p></p>
-        { this.state.error.length > 0  &&
+      <Backdrop className={classes.backdrop} open={openBackdrop}>
+        <CircularProgress color="inherit" />
+      </Backdrop>
+
+        <br/>
+        { error.length > 0  &&
             <div className="error">
-              ERROR : Please correct the errors and continue
+              ERROR : The following errors occured:
               <ul>
-              <li className="error" > {this.state.error} </li>
+              <li className="error" > {error} </li>
               </ul>
             </div> }
 
 
-        <main role="main" className="col-lg-12 d-flex justify-content-center">
-                      <div id="loader" className="text-center">
-                        <p className="text-center">Loading...{this.state.bookingCount}</p>
-                      </div>
+            <main role="main" >
+              <div id="loader" className="text-center">
+                <p className="text-center">Loading...{counter}</p>
+              </div>
           </main>
-        <p></p>
-        <table className="rentaltable" >
-          <tr className="blackHeader">
-            <td></td>
-            <td> Address </td>
-            <td> Token </td>
-            <td> Start Date </td>
-            <td> # Of Weeks </td>
-            <td> Rent </td>
-            <td> Deposit </td>
-            <td> Status </td>
-          </tr>
-        { this.state.bookings.map((booking, key) => {
-              return(
-                  <tbody>
-                    <tr>
-                    <td>
+        <br/>
+          <ThemeProvider  theme={theme}>
+            <TableContainer component={Paper}>
+              <Table className={classes.table} aria-label="My Rentals">
+                <TableHead>
+                  <TableRow>
+                  <StyledTableCell></StyledTableCell>
+                    <StyledTableCell>Address</StyledTableCell>
+                    <StyledTableCell align="left" >Token</StyledTableCell>
+                    <StyledTableCell align="left">Start Date</StyledTableCell>
+                    <StyledTableCell align="left"># of Weeks</StyledTableCell>
+                    <StyledTableCell align="left">Rent</StyledTableCell>
+                    <StyledTableCell align="left">Deposit</StyledTableCell>
+                    <StyledTableCell align="left">Status</StyledTableCell>
+                    <StyledTableCell align="left"></StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {bookings.map((booking, key) => (
+                    <StyledTableRow key={booking.tokenid}>
+                      <StyledTableCell component="th" scope="row">
+                        {booking.tokenid}
+                      </StyledTableCell>
+                            <StyledTableCell align="left"> {booking.addr}</StyledTableCell>
+                            <StyledTableCell align="left">{booking.isToken && booking.token}</StyledTableCell>
+                            <StyledTableCell align="left">{moment.unix(booking.startDate).format('L')}</StyledTableCell>
+                            <StyledTableCell align="left">{booking.noOfWeeks}</StyledTableCell>
+                            <StyledTableCell align="left">{booking._rent/ 1000000000000000000}</StyledTableCell>
+                            <StyledTableCell align="left">{booking._deposit/ 1000000000000000000}</StyledTableCell>
+                            <StyledTableCell align="left">{getStatus(booking._status)}</StyledTableCell>
+                            <StyledTableCell align="left">
+                              {getStatusButton(booking._status,booking.tokenid, booking._rent, booking._deposit,booking.noOfWeeks, key )}
+                              &nbsp; {showWidthdraw(booking.tokenid, booking.startDate, booking.noOfWeeks, booking._deposit, booking.isRefund, key)}
 
-                        <span className="content">{booking.tokenid} &nbsp;</span>
-                    </td>
-                      <td>
-
-                        <span className="content">{booking.addr} &nbsp;</span>
-                      </td>
-                      <td>
-
-                        <span className="content">{booking.token} &nbsp;</span>
-                      </td>
-                      <td>
-                        <span className="content">{moment.unix(booking.startDate).format('L')} &nbsp;</span>
+                      </StyledTableCell>
 
 
-                      </td>
-                      <td>
-                        <span className="content">{booking.noOfWeeks} &nbsp;</span>
+                    </StyledTableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            </ThemeProvider>
+            <Snackbar
+                open={openTransition}
+                onClose={handleCloseTransition}
+                TransitionComponent={transition}
+                message={transitionMessage}
+                key={transition ? transition.name : ''}
+              />
 
-                      </td>
-                      <td>
-                       <span className="content">{booking._rent/ 1000000000000000000} eth &nbsp;</span>
-
-                      </td>
-                      <td>
-                        <span className="content">{booking._deposit/ 1000000000000000000} eth &nbsp;</span>
-
-                      </td>
-                      <td>
-
-                        {this.getStatus(booking._status,booking.tokenid, booking._rent, booking._deposit,booking.noOfWeeks )}
-                        &nbsp; {this.showWidthdraw(booking.tokenid, booking.startDate, booking.noOfWeeks, booking._deposit, booking.isRefund)}
-                        </td>
-                    </tr>
-                    </tbody>
-              )
-            })}
-            </table>
         </div>
   );
-  };
 }
 
 export default MyRentals;

@@ -1,11 +1,13 @@
-import React, { Component } from 'react'
+//import react
+import React, { useState,useEffect, useRef, useContext } from "react";
+
 import Web3 from 'web3'
 import { PROPERTMANAGER_ABI, PROPERTMANAGER_ADDRESS } from '../config'
 import {
   connectWallet,
   getCurrentWalletConnected //import here
 } from "./connection.js";
-
+import WalletContext from './context'
 
 import PropertyListings from './PropertyListings';
 
@@ -14,83 +16,80 @@ import PropertyListings from './PropertyListings';
  display using PropertyListing Component
 
 */
-class Rental extends Component {
+function Rental(props) {
+  const [propertyCount, setPropertyCount] = useState(-1);
+  const [properties, setProperties] = useState([]);
+  const [walletAddress, setWallet] = useState("");
+  const myPropertiesRef = useRef(properties);
+  const [counter, setSetCounter]  = useState(0);
+  const walletInfo = useContext(WalletContext);
 
-  constructor(props) {
-    super(props)
-    this.state = {
-      account: '',
-      propertyCount: 0,
-      properties: [],
-      account : this.props.account,
-    };
-  };
 
-  UNSAFE_componentWillMount() {
-      try {
-        this.loadBlockchainData()
+  useEffect(() => {
+    //if (walletAddress !== "")
+   setWallet(walletInfo);
+   loadProperyList(walletInfo);
+
+  },[walletInfo, myPropertiesRef]);
+
+
+
+ async function loadProperyList(address)  {
+
+  // Get web3 provider - pointing to connected or ganache
+  const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+
+  // create an instnace of the PropertyManager smart contract
+  const propertyManagerInstance = new web3.eth.Contract(PROPERTMANAGER_ABI, PROPERTMANAGER_ADDRESS);
+  // save to state ?/
+  //setPropertyManagerInstance(propertyManagerInstance);
+  // get count of the properties on blockhain via web3
+  const propertyCount = await propertyManagerInstance.methods.getCount().call({from: address});
+  // save count
+  setPropertyCount(propertyCount);
+  // loop and get each propertu details
+  var newProperties = [];
+  for (var i = 0; i <= propertyCount; i++) {
+    try {
+      const property = await propertyManagerInstance.methods.getDetails(i).call({from: address});
+      //save to state
+      newProperties = newProperties.concat( property);
+      setProperties(newProperties);
+      setSetCounter(i);
+    }
+    catch(error)
+    // @dev Load the properties from blockchain
+      {
+        //throw error;
+        continue;
       }
-     catch (error)
-     {
-       console.log(error)
-     }
 
   }
-
-  // @dev Load the properties from blockchain
-  async loadBlockchainData() {
-
-
-      //const {address, status} = await getCurrentWalletConnected();
-      //this.setState({account : address})
-
-      // Get web3 provider - pointing to connected or ganache
-      const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
-
-      // create an instnace of the PropertyManager smart contract
-      const propertyManagerInstance = new web3.eth.Contract(PROPERTMANAGER_ABI, PROPERTMANAGER_ADDRESS)
-      // save to state ?/
-      this.setState({ propertyManagerInstance })
-      // get count of the properties on blockhain via web3
-        const propertyCount = await propertyManagerInstance.methods.getCount().call()
-      // save count
-      this.setState({ propertyCount })
-      // loop and get each propertu details
-      for (var i = 0; i <= propertyCount; i++) {
-        try {
-          const property = await propertyManagerInstance.methods.getDetails(i).call()
-          //save to state
-          this.setState({
-            properties: [...this.state.properties, property]
-          })
-      }
-      catch(error)
-        {
-          continue;
-
-        }
-      }
-
+  setProperties(newProperties);
 }
 
-render() {
-    return (
-      <div>
+
+  return(
+
+      <div >
         <nav>
         </nav>
         <div className="container-fluid">
+        <br/>
           <main role="main" className="col-lg-12 d-flex justify-content-center">
                       <div id="loader" className="text-center">
-                        <p className="text-center">Loading...{this.state.propertyCount}</p>
+                        <p className="text-center">Loading...{counter}</p>
                       </div>
+          <br/>
           </main>
+          <br/>
         <div className="row">
-          <PropertyListings properties= {this.state.properties}></PropertyListings>
+          <PropertyListings properties= {properties} showButtons={true} ></PropertyListings>
         </div>
       </div>
     </div>
   );
-  };
-}
+};
+
 
 export default Rental;

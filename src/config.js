@@ -1,15 +1,15 @@
 // ABI & Address of the smart contracts
 // PropertyManager Contract
-
+/*
 export const PROPERTMANAGER_ADDRESS = '0x9BCfBf25Efd3882336B7370A32534eb0E1FE148C';
 // BookingManager
 export const BOOKINGMANAGER_ADDRESS = '0x98bF4D1E6EC0159026806a6B358eeA4D2dDDC263';
-/*
+*/
 //Ganache
 export const PROPERTMANAGER_ADDRESS = '0x04D6406C8205F490b082e4BE7773fd8C8aB7D535'
 // BookingManager
 export const BOOKINGMANAGER_ADDRESS = '0xA9F9925a19635C780d71e9195181F3050D2A97e1'
-*/
+
 
 export const PROPERTMANAGER_ABI =
 [

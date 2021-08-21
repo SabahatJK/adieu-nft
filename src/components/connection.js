@@ -148,5 +148,18 @@ export const setNetwork = () => {
   };
 };
 
-export const ConnectContext = React.createContext({});
-export const ConnectProvider = ConnectContext.Provider;
+export const extractBlockchainError = (sError) => {
+  var strMessage = sError;
+  var indexOfRevert = strMessage.indexOf("VM Exception");
+
+  if ((indexOfRevert !== -1) )
+  {
+
+    strMessage = sError.substring(indexOfRevert, strMessage.length-1);
+    indexOfRevert = strMessage.indexOf("data");
+    if ((indexOfRevert !== -1) )
+
+        strMessage = strMessage.substring(0, indexOfRevert);
+    }
+    return strMessage;
+  }

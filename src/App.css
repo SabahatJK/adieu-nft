@@ -3,8 +3,8 @@ html,body {
   margin:0;
   padding:0;
   height:100%; /* needed for container min-height */
-  font-family: "Open Sans", Tahoma, Geneva, sans-serif;
-  font-size: 13px;
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+font-size: 12px;
 }
 
 * {
@@ -13,11 +13,15 @@ html,body {
   padding: 0;
 }
 
-navigation a {
+.nav {
+  display: flex;
+  width:500px;
+
+}
+
+.nav a {
   background-color: white;
-  color: #DB7093;
-
-
+  padding: 20px;
 }
 
 .container {

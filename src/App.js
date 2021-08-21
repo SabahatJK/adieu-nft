@@ -1,32 +1,47 @@
 //import react
-import { useEffect, useState } from "react";
+import React, { useState, useLayoutEffect } from "react";
+import Link from "@material-ui/core/Link";
+import { BrowserRouter as Router, Route, Link as RouterLink, Switch, Redirect } from "react-router-dom";
+import { WalletProvider } from './components/context'
+//import { AppContext } from './context';
+
 import {
   connectWallet,
-  getCurrentWalletConnected, ConnectProvider  //import here
+  getCurrentWalletConnected  //import here
 } from "./components/connection.js";
 
-//import router
+/*//import router
 import {
   BrowserRouter as Router,
   Route,
-  Link,
+  //Link,
   Switch,
   Redirect
 } from 'react-router-dom';
-
+*/
 import Header from './components/Header';
 import Footer from './components/Footer';
 import About from './components/About';
 import Rental from './components/Rental';
-import AddListing from './components/AddListing';
+import MyProperties from './components/MyProperties';
 import MyRentals from './components/MyRentals';
 import FastForward from './components/FastForward';
-
+import './App.css';
 
 //import { ConnectionProvider } from "./connectContext.js";
+import { makeStyles } from '@material-ui/core/styles';
+import Button from '@material-ui/core/Button';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    '& > *': {
+      margin: theme.spacing(1),
+    },
+  },
+}));
 
 
-import './App.css'
+
 
 //window.ethereum.on('accountsChanged', handleAccountsChanged);
 
@@ -36,113 +51,130 @@ function App() {
    //State variables
    const [walletAddress, setWallet] = useState("");
    const [status, setStatus] = useState("");
-   const [networkId, setNetworkId] = useState("");
+   //const [networkId, setNetworkId] = useState("");
    const [networkName, setNetworkName] = useState("");
+   const classes = useStyles();
+   const walletInfo = {
+       walletAddress: "",
+       networkId : ""
+   }
 
-   useEffect(async () => {
-    const {address, status, networkId, networkName } = await getCurrentWalletConnected();
-    setWallet(address);
-    setStatus(status);
-    setNetworkId(networkId);
-    setNetworkName(networkName);
-    addWalletListener();
-    addNetworkListner();
-  }, []);
+   useLayoutEffect(() => {
+
+     function addNetworkListner() {
+       if (window.ethereum) {
+          window.ethereum.on('chainChanged', function(networkId){
+
+            if (networkId.length > 0) {
+               connectWalletPressed();
+             };
+           });
+         }
+     };
+     // detect account  change and connect to new network
+     function addWalletListener() {
+       if (window.ethereum) {
+         window.ethereum.on("accountsChanged", (accounts) => {
+           if (accounts.length > 0) {
+             connectWalletPressed();
+           };
+         });
+       };
+     };
+     async function connectToNetwork() {
+
+        const {address, status, networkId, networkName } = await getCurrentWalletConnected();
+        setWallet(address);
+        setStatus(status);
+        setWallet(address);
+        //setNetworkId(networkId);
+        setNetworkName(networkName);
+
+      };
+    connectToNetwork();
+     addWalletListener();
+     addNetworkListner();
+   }, [] );
+
 
 // detect Network  change and connect to new network
-function addNetworkListner() {
-  if (window.ethereum) {
-     window.ethereum.on('networkChanged', function(networkId){
 
-       if (networkId.length > 0) {
-          connectWalletPressed();
-        };
-      });
-    }
-};
-// detect account  change and connect to new network
-function addWalletListener() {
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
-      if (accounts.length > 0) {
-        connectWalletPressed();
-      };
-    });
-  };
 
-};
 
 const connectWalletPressed = async () => {
   const walletResponse = await connectWallet();
   setStatus(walletResponse.status);
   setWallet(walletResponse.address);
-  setNetworkId(walletResponse.networkId);
+  //setNetworkId(walletResponse.networkId);
   setNetworkName(walletResponse.networkName);
 };
 
+
  return (
-      <div className="main">
+      <div className="main" align="center">
         <Header/>
 
         <div align="center">
           <br/>
-          <button id="walletButton" onClick={connectWalletPressed} className="blackSubmit" >
+          <Button variant="outlined" onClick={connectWalletPressed} color="inherit">
             {(networkName.length >0 && walletAddress.length > 0) ? (
+              " Connected: " +
               String(networkName) +
-              " : Connected: " +
+              " : " +
               String(walletAddress).substring(0, 6) +
               "..." +
               String(walletAddress).substring(38)
             ) : (
               <span>Connect Wallet</span>
             )}
-          </button>
+
+          </Button>
           <div>
             {status}
         </div>
         <br/>
       </div>
-      <nav>
-        <ConnectProvider value={walletAddress}>
+      <br/>
+      <WalletProvider value={walletAddress}>
           <Router>
-            <div className="navigation"  align="center">
-              <table width="50%" align="center">
-                <tr>
-                    <td>
+                <div className="nav"  align="center">
+                      <div className="navigationItem">
+                        <Link component={RouterLink} to="/About"> About
 
-                      <Link to={{pathname:"/About"}}>About</Link>
-                    </td>
-                    <td>
-                    <Link to="/Rental">Want to rent?</Link>
-                    </td>
-                    <td>
-                    <Link to="/AddListing">Want to List a Property?</Link>
-                    </td>
-                    <td>
-                    <Link to="/MyRentals">My Rentals</Link>
-                    </td>
+                        </Link>
+                      </div>
+                    <div className="navigationItem">
+                      <Link component={RouterLink} to="/Rental">Rent a Property? </Link>
+                    </div>
+                    <div className="navigationItem">
 
-                </tr>
-              </table>
-            <Switch>
+                    <Link component={RouterLink} to="/MyProperties">
+                      My Properties
+                    </Link>
+                    </div>
+                    <div className="navigationItem">
+                      <Link component={RouterLink} to="/MyRentals">
+                        My Rentals
+                      </Link>
+                    </div>
+                </div>
+              <Switch>
                 <Route exact path="/">
                   <Redirect to="/About" />
                 </Route>
                 <Route exact path='/About' >
                     <About account={walletAddress} />
                 </Route>
-                <Route exact path='/AddListing' >
-                  <AddListing account={walletAddress}/>
+                <Route exact path='/MyProperties' >
+                  <MyProperties account={walletAddress}/>
                 </Route>
                 <Route exact path='/Rental' component={Rental}></Route>
                 <Route exact path='/MyRentals' component={MyRentals}></Route>
                 <Route exact path='/FastForward' component={FastForward}></Route>
-
               </Switch>
-            </div>
+
          </Router>
-       </ConnectProvider>
-       </nav>
+       </WalletProvider>
       <Footer></Footer>
     </div>
   );

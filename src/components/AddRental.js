@@ -1,11 +1,11 @@
 //import react
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { useState, useEffect } from "react";
 //import {pinJSONToIPFS} from './pinata.js'
 //import Modal from 'react-modal';
 import moment from 'moment';
 import Web3 from 'web3'
 import {
-connectWallet,
+/*connectWallet,*/
   getCurrentWalletConnected,
   extractBlockchainError //import here
 } from "./connection.js";
@@ -18,15 +18,15 @@ import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
-import InputLabel from '@material-ui/core/InputLabel';
+//import InputLabel from '@material-ui/core/InputLabel';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
 
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
+//import DialogContentText from '@material-ui/core/DialogContentText';
+//import DialogTitle from '@material-ui/core/DialogTitle';
 
 
 
@@ -74,7 +74,9 @@ const useStyles = makeStyles((theme) => ({
 
 }));
 
-
+const stylesInput={
+  width: '100px',
+}
 
 // @dev Takes care of the whole rental process/workflow
 // first is the charging of non refundable fee
@@ -84,7 +86,7 @@ const useStyles = makeStyles((theme) => ({
 function AddRental(props)  {
 
   //State variables
-  const [walletAddress, setWallet] = useState("");
+  //const [walletAddress, setWallet] = useState("");
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [noOfWeeks, setNoOfWeeks] = useState(1);
   const [startDate, setStartDate] = useState("");
@@ -96,24 +98,24 @@ function AddRental(props)  {
   const [tokenId, setTokenId] = useState(-1);
   const [tokenURI, setTokenURI] = useState("");
 
-  const [submitDisabled, setSubmitDisabled] = useState(false);
+  //const [submitDisabled, setSubmitDisabled] = useState(false);
   const [isDeposit, setIsDeposit] = useState(false);
   const [isRent, setIsRent] = useState(false);
   const [isSubmit, setIsSubmit] = useState(true);
   const [errors, setErrors] = useState("");
   const[weeks, setWeeks] = useState([]);
-  const [web3, setWeb3] = useState(null);
-  const[bookingInstance, setBookingInstance] = useState(null);
+  //const [web3, setWeb3] = useState(null);
+  //const[bookingInstance, setBookingInstance] = useState(null);
 
   const classes = useStyles();
   const [openBackdrop, setOpenBackdrop] = useState(false);
 
   const[disabled, setDisabled] = useState("");
 
-  const handleClose = () => {
+  /*Const handleClose = () => {
       setModalIsOpen(false);
     };
-
+*/
 //  const[beforeDate, setBeforeDate] = useState('');
 //  const[afterDate, setAfterDate] = useState('');
 
@@ -121,25 +123,26 @@ function AddRental(props)  {
 useEffect(() => {
    calculateWeeks();
    // intalize web3
-   init();
-},[] );
+   //init();
+},[]);
 
 
     // Intalize web3
-  async function init() {
+/*  async function init() {
       connectWallet();
       const {address, } = await getCurrentWalletConnected();
-      setWallet(address);
+      //setWallet(address);
       addWalletListener();
       // intalize web3 with local ganache
       const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
       // get instance of the BookingManager Contract
       const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
-      setWeb3(web3);
-      setBookingInstance(bookingInstance);
+      //setWeb3(web3);
+      //setBookingInstance(bookingInstance);
 
 
     }
+  */
   // Calculate the weeks between start date and end date to display
   // on the dropdown, not using calender, as no time
   function calculateWeeks() {
@@ -154,12 +157,12 @@ useEffect(() => {
       // using floor to ignore any left over days after the last week
       const noWeeks =  (Math.floor(parseInt(props.endDate)) - parseInt(props.startDate))/week;
       //const noWeeks = 52;
-      console.log("No of weeks " + noWeeks)
+      //console.log("No of weeks " + noWeeks)
       // Loop and get the weeks, any left over days are ignored
       for (let i = 0; i<= noWeeks -1 ; i++)
       {
-        console.log((parseInt(props.startDate) + i*parseInt(week)));
-        console.log(moment(new Date()/1000).valueOf())
+        //console.log((parseInt(props.startDate) + i*parseInt(week)));
+        //console.log(moment(new Date()/1000).valueOf())
         if ((parseInt(props.startDate) + i*parseInt(week)) >= moment(new Date()).valueOf()/1000)
           // calculate the starting date of the week
           weeks[i] =  parseInt(props.startDate) + i*parseInt(week);
@@ -196,10 +199,16 @@ useEffect(() => {
   if (tokenId > 0 )
   {
     try {
-      setSubmitDisabled(true);
+      const walletResponse = await getCurrentWalletConnected();
+      const walletAddr = await walletResponse.address;
+      const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+      // get instance of the BookingManager Contract
+      const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+
+      //setSubmitDisabled(true);
       setOpenBackdrop(true);
       // get the token address from the BookingManager Contract
-      const tokenAddr = await bookingInstance.methods.getTokenAddress(tokenId).call({from : walletAddress});
+      const tokenAddr = await bookingInstance.methods.getTokenAddress(tokenId).call({from : walletAddr});
       setTokenAddr("Please add the token to your metamask, to see your minted token : " + tokenAddr);
       setIsRent(false);
       setIsDeposit(false);
@@ -208,7 +217,7 @@ useEffect(() => {
     } catch (error) {
       setErrors(error.message);
     } finally {
-      setSubmitDisabled(false);
+      //setSubmitDisabled(false);
       setOpenBackdrop(false);
 
 
@@ -216,18 +225,6 @@ useEffect(() => {
 
   }
 }
-
-function addWalletListener() {
-  if (window.ethereum) {
-    window.ethereum.on("accountsChanged", (accounts) => {
-      if (accounts.length > 0) {
-        setWallet(accounts[0]);
-        connectWallet();
-      }
-    });
-  };
-}
-
   async function generateTokenURI() {
      //make metadata
     const JSONBody = {
@@ -248,7 +245,7 @@ function addWalletListener() {
 
     setErrors("Uploading Token URI to pinata  @ : " + pinataResponse.message);
     setOpenBackdrop(false);
-    setSubmitDisabled(false);
+    //setSubmitDisabled(false);
 
 
   }
@@ -265,7 +262,13 @@ function addWalletListener() {
   try {
     if (tokenId > 0 )
     {
-      setSubmitDisabled(true);
+      const walletResponse = await getCurrentWalletConnected();
+      const walletAddr = await walletResponse.address;
+      const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+      // get instance of the BookingManager Contract
+      const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+
+      //setSubmitDisabled(true);
       setOpenBackdrop(true);
       setDisabled(true);
       let txtHash;
@@ -274,7 +277,7 @@ function addWalletListener() {
         // call blockchain async and wait till done
         await bookingInstance.methods.rent(
           tokenId, tokenURI).send(
-          {from: walletAddress,
+          {from: walletAddr,
           value: web3.utils.toBN(props.rentFee*noOfWeeks)})
           .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
             let sError = extractBlockchainError(error.message);
@@ -294,17 +297,17 @@ function addWalletListener() {
         setRentalTxHash("Rent Tx Hash: " + txtHash);
         setIsRent(false);
         setIsDeposit(false);
-        setSubmitDisabled(true);
+        //setSubmitDisabled(true);
 
       }
     }
   } catch(error) {
     let sError = extractBlockchainError(error.message);
     setErrors("Rent  @ : " + sError);
-    setSubmitDisabled(false);
+    //setSubmitDisabled(false);
   }
   finally {
-    setSubmitDisabled(false);
+    //setSubmitDisabled(false);
     setOpenBackdrop(false);
   }
 }
@@ -315,14 +318,20 @@ function addWalletListener() {
     try {
       if (tokenId > 0 )
       {
+          const walletResponse = await getCurrentWalletConnected();
+          const walletAddr = await walletResponse.address;
+          const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+          // get instance of the BookingManager Contract
+          const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+
           setOpenBackdrop(true);
-          setSubmitDisabled(true);
+          //setSubmitDisabled(true);
           setDisabled(true);
           //this.setState({TokenId, tokenId})
           let txtHash;
           await bookingInstance.methods.deposit(
           tokenId).send(
-          {from: walletAddress,
+          {from: walletAddr,
           value: web3.utils.toBN(props.depositFee*noOfWeeks)}).then(function(receipt){
             txtHash = receipt["transactionHash"]
             console.log(receipt["transactionHash"])
@@ -331,7 +340,7 @@ function addWalletListener() {
             setIsRent(true);
             setIsDeposit(false);
             setIsSubmit(false);
-            setSubmitDisabled(false);
+            //setSubmitDisabled(false);
             rent(tokenId)
         });
       }
@@ -340,7 +349,7 @@ function addWalletListener() {
 
       let sError = extractBlockchainError(error.message);
       setErrors("Deposit  @ : " + sError);
-      setSubmitDisabled(false);
+      //setSubmitDisabled(false);
       setOpenBackdrop(false);
       throw (error);
     }
@@ -367,26 +376,26 @@ function addWalletListener() {
 
           }
           else {
-            setSubmitDisabled(false);
+            //setSubmitDisabled(false);
             setDepositTxHash("");
             setRentalTxHash("");
             setReservTxHash("");
             let txtHash = '';
             try {
-              /*
-            var str = " PropertyId : " + props.propertyId +
-                      " \n startDate : " + startDate +
-                      "\n noOfWeeks : " + noOfWeeks +
-                      "\n walletAddress : " + walletAddress +
-                      "\n props.nonRefundableFee : " + props.nonRefundableFee;
-            alert(str)*/
+
+            const walletResponse = await getCurrentWalletConnected();
+            const walletAddr = await walletResponse.address;
+            const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+            // get instance of the BookingManager Contract
+            const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+
             // intiate the rental process by calling reserve
             await bookingInstance.methods.reserve(
                                   props.propertyId,
                                   parseInt(startDate),
                                   noOfWeeks,
-                                  walletAddress).send(
-                                  {from: walletAddress,
+                                  walletAddr).send(
+                                  {from: walletAddr,
                                   value: web3.utils.toBN(props.nonRefundableFee)})
                                   .on('transactionHash', function(hash){
                                     txtHash = hash
@@ -402,13 +411,14 @@ function addWalletListener() {
 
                                 })
                                 .on('confirmation', function(confirmationNumber, receipt){
-                                  //this.setState({confirmation : confirmationNumber})
                                 })
+                                //this.setState({confirmation : confirmationNumber})
                                 .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
-                                  //alert(JSON.parse(JSON.stringify(error))["message"]);
+                                  alert(JSON.stringify(error));
                                   let sError = extractBlockchainError(error.message);
+                                  //alert()
                                   setErrors("Add Rental  @ : " + sError);
-                                  setSubmitDisabled(false);
+                                  //setSubmitDisabled(false);
                                   setOpenBackdrop(false);
                                   console.error(error)
                                 });
@@ -420,8 +430,9 @@ function addWalletListener() {
 
           } catch(error) {
               setDisabled(false);
-              let sError = extractBlockchainError(error.message);
-              setErrors("Add Rental  @ : " + sError);
+              //let sError = extractBlockchainError(error.message);
+              //setErrors("Add Rental  @ : " + sError);
+              setErrors("Add Rental  @ : " + error.message);
               setOpenBackdrop(false);
 
 
@@ -441,9 +452,9 @@ function addWalletListener() {
         setTokenURI("");
         setErrors("");
         setTokenAddr("");
-        setSubmitDisabled(false);
+        //setSubmitDisabled(false);
         setDisabled(false);
-        
+
     };
     // Close Modal
   function closeModal() {
@@ -487,6 +498,7 @@ function addWalletListener() {
 
                                        <Select
                                         required
+                                        style={stylesInput}
                                          id="startDate"
                                          name="startDate"
                                          value={startDate}
@@ -496,7 +508,7 @@ function addWalletListener() {
                                        >
                                            { weeks.map((item, key1) => {
                                                      return(
-                                                       <MenuItem value={item}>{moment.unix(item).format('L')}</MenuItem>
+                                                       <MenuItem key={key1} value={item}>{moment.unix(item).format('L')}</MenuItem>
                                                      )})}
 
                                                </Select>
@@ -507,10 +519,15 @@ function addWalletListener() {
                                      <td>
                                          <TextField id="noOfWeeks"
                                              required
+                                             style={stylesInput}
                                              disabled={disabled}
                                              type="number"
                                              InputLabelProps={{
                                                required: true,
+                                             }}
+                                             inputProps={{
+                                               min: 1,
+
                                              }}
                                              onChange={handleChange} />
 

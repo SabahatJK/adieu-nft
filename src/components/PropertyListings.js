@@ -66,12 +66,12 @@ function PropertyListings(props) {
       return (
          <div>
 
-
+              <ThemeProvider  theme={theme} >
                {props.properties.map((property, key) => {
                  return (
-                   <div>
+                   <div key={key}>
+
                    <br/>
-                   <ThemeProvider  theme={theme} >
                      <TableContainer component={Paper} key={key}>
                        <Table className={classes.table} aria-label="My Rentals"  key={key}>
 
@@ -118,10 +118,10 @@ function PropertyListings(props) {
                         </TableBody>
                       </Table>
                     </TableContainer>
-                    </ThemeProvider>
                     </div>
-              )})}
 
+              )})}
+              </ThemeProvider>
         </div>
 
       )

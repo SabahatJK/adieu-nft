@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef ,useContext } from "react";
+import React, { useState, useEffect } from "react";
 import Web3 from 'web3'
 import './PropertyListings.css'
 
@@ -54,7 +54,6 @@ const theme = createTheme({
         MuiTableCell: {
             root: {  //This can be referred from Material UI API documentation.
                 padding: '5px',
-                width: '600px'
             },
         },
       MuiTableContainer: {
@@ -107,85 +106,87 @@ function MyRentals(props)  {
   const [transition, setTransition] = useState(undefined);
   const [transitionMessage, setTransitionMessage] = useState("");
 
-  const[disabled, setDisabled] = useState("");
+  //const[disabled, setDisabled] = useState("");
 
-  const [walletAddress, setWallet] = useState("");
-  const [bookingCount, setBookingCount] = useState("");
+  //const [walletAddress, setWallet] = useState("");
+  //const [bookingCount, setBookingCount] = useState("");
   const [bookings, setBookings] = useState([]);
   const [error, setError] = useState('');
   //const [web3, setWeb3] = useState(null);
-  const [bookingInstance, setBookingInstance] = useState(null);
+  //const [bookingInstance, setBookingInstance] = useState(null);
 
-  const [reservTxHash, setReservTxHash] = useState("");
-  const [depositTxHash, setDepositTxHash] = useState("");
-  const [rentalTxHash, setRentalTxHash] = useState("");
+  //const [reservTxHash, setReservTxHash] = useState("");
+  //const [depositTxHash, setDepositTxHash] = useState("");
+  //const [rentalTxHash, setRentalTxHash] = useState("");
 
-  const [tokenAddr, setTokenAddr] = useState("");
-  const [tokenId, setTokenId] = useState(1);
-  const [tokenURI, setTokenURI] = useState("");
+  //const [tokenAddr, setTokenAddr] = useState("");
+  //const [tokenId, setTokenId] = useState(1);
+  //const [tokenURI, setTokenURI] = useState("");
 
-  const [submitDisabled, setSubmitDisabled] = useState(false);
-  const [status, setStatus] = useState("");
+  //const [submitDisabled, setSubmitDisabled] = useState(false);
+  /*const [status, setStatus] = useState("");
   const [isRent, setIsRent] = useState(false);
   const [isSubmit, setIsSubmit] = useState(true);
-  const [counter, setSetCounter]  = useState(0);
-
   const [isUpdated, setIsUpdated] = useState(false);
-
   const walletInfo = useContext(WalletContext);
   const [contextWallet, setContextWallet] = useContext(WalletContext);
+*/
+  const [counter, setSetCounter]  = useState(0);
 
-  const myBookingRef = useRef(bookings);
+
+  //const myBookingRef = useRef(bookings);
+
+  useEffect(() => {
+    //const obj = getCurrentWalletConnected()
+    //setWallet(obj.address);
+  },);
+
 
  useEffect(() => {
-      setWallet(walletInfo);
-      loadBlockchainData(walletInfo);
- }, [walletInfo]);
+     loadBlockchainData();
+ }, []);
 
+ async function loadBlockchainData()  {
 
-async function loadBlockchainData(address)  {
+    const walletResponse = await connectWallet();
+    const walletAddr = await walletResponse.address;
 
-    let walletAddr;
-    if (address === undefined || address.trim() === "")
+    if ((typeof walletAddr !== 'undefined') && (walletAddr !== ""))
     {
-      const obj = getCurrentWalletConnected();
-      walletAddr = obj.address;
-      setContextWallet(walletAddr);
-    }
-    else {
-      walletAddr = address;
-    }
-    setWallet(walletAddr);
-    setError('');
-    //setBookings([]);
+      //setWallet(walletAddr);
+      setError('');
+      //setBookings([]);
 
-    const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
-    const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
-    //setWeb3(web3);
-    setBookingInstance(bookingInstance);
-    const bookingCount = await bookingInstance.methods.getCntForTenant(address).call({from: walletAddr});
-    setBookingCount(bookingCount);
-    let newBookings = [];
-    var i  = 0;
-    for (i = 0; i < bookingCount; i++) {
-      try {
+      const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
+      const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+      //setWeb3(web3);
+      //setBookingInstance(bookingInstance);
+      const bookingCount = await bookingInstance.methods.getCntForTenant(walletAddr).call({from: walletAddr});
+      //setBookingCount(bookingCount);
+      let newBookings = [];
+      var i  = 0;
+      for (i = 0; i < bookingCount; i++) {
+        try {
 
-      const index = await bookingInstance.methods.tenantTokens(walletAddr, i).call({from: walletAddr})
-      const booking = await bookingInstance.methods.getDetails(index).call({from: address})
-      const isRefund = await bookingInstance.methods.getRefund(booking.tokenid).call({from: walletAddr})
-      booking.isRefund = isRefund;
-      booking.isToken = (booking._status === "3") ? true : false;
-      setSetCounter(i)
-      newBookings = newBookings.concat( booking);
-      }
-      catch(error) {
-        //alert("An error occured while loading data : " + " i " + error.message);
-        let sError = extractBlockchainError(error.message);
-        setError(" Load Data from Blockchain @ index " + i + " : " + sError);
-        continue;
-      }
-      setBookings(newBookings);
-    };
+        const index = await bookingInstance.methods.tenantTokens(walletAddr, i).call({from: walletAddr})
+        const booking = await bookingInstance.methods.getDetails(index).call({from: walletAddr})
+        const isRefund = await bookingInstance.methods.getRefund(booking.tokenid).call({from: walletAddr})
+        booking.isRefund = isRefund;
+        booking.isToken = (booking._status === "3") ? true : false;
+        setSetCounter(i + 1);
+        newBookings = newBookings.concat( booking);
+        setBookings(newBookings);
+        }
+        catch(error) {
+          //alert("An error occured while loading data : " + " i " + error.message);
+          let sError = extractBlockchainError(error.message);
+          setError(" Load Data from Blockchain @ index " + i + " : " + sError);
+          continue;
+        }
+
+      };
+
+    }
 
 };
 function sleep(milliseconds)  {
@@ -215,7 +216,7 @@ async function generateTokenURI() {
     var tokenURI = pinataResponse.pinataUrl;
     setOpenTransition(false);
     await sleep(1000);
-    setTokenURI(tokenURI);
+    //setTokenURI(tokenURI);
     setTransitionMessage("Token URI : "  + tokenURI );
     setOpenTransition(true);
     setTransition(() => TransitionUp);
@@ -226,6 +227,11 @@ async function generateTokenURI() {
 async function payRent(tokenId, rent, noOfWeeks, key) {
   if (tokenId > 0 )
   {
+    const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
+    const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+    const walletResponse = await getCurrentWalletConnected();
+    const walletAddr = await walletResponse.address;
+
     setOpenBackdrop(true);
     try {
 
@@ -233,7 +239,7 @@ async function payRent(tokenId, rent, noOfWeeks, key) {
         // call blockchain async and wait till done
         await bookingInstance.methods.rent(
           tokenId, tokenURI).send(
-          {from: walletAddress,
+          {from: walletAddr,
           value: rent})
           .on('error', function(error, receipt) { // If the transaction was rejected by the network with a receipt, the second parameter will be the receipt.
             alert(JSON.parse(JSON.stringify(error))["message"]);
@@ -246,8 +252,8 @@ async function payRent(tokenId, rent, noOfWeeks, key) {
             setOpenTransition(false);
             console.log("receipt")
             let txtHash = receipt["transactionHash"]
-            setRentalTxHash(txtHash);
-            setIsRent(false);
+            //setRentalTxHash(txtHash);
+            //setIsRent(false);
             bookings[key]._status = '3';
             bookings[key].tokenURI = tokenURI;
             setBookings(bookings)
@@ -276,15 +282,20 @@ async function payRent(tokenId, rent, noOfWeeks, key) {
 async function payDeposit(tokenId, deposit, rent, noOfWeeks, key){
   if (tokenId > 0 )
   {
+    const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
+    const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+    const walletResponse = await getCurrentWalletConnected();
+    const walletAddr = await walletResponse.address;
+
       setOpenBackdrop(true);
       try{
 
           await bookingInstance.methods.deposit(
           tokenId).send(
-          {from: walletAddress,
+          {from: walletAddr,
           value: deposit}).then(function(receipt){
             let txtHash = receipt["transactionHash"]
-            setDepositTxHash("Deposit Tx Hash: " + txtHash)
+            //setDepositTxHash("Deposit Tx Hash: " + txtHash)
             //setStatus(2);
             console.log(receipt["transactionHash"]);
             setOpenTransition(false);
@@ -294,7 +305,6 @@ async function payDeposit(tokenId, deposit, rent, noOfWeeks, key){
 
             bookings[key]._status = '2';
             setBookings(bookings);
-
             payRent(tokenId, rent, noOfWeeks, key);
         });
         //loadBlockchainData();
@@ -312,11 +322,16 @@ async function payDeposit(tokenId, deposit, rent, noOfWeeks, key){
 async function refund(tokenId, deposit, noOfWeeks, key){
   if (tokenId > 0 )
   {
+    const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
+    const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
+    const walletResponse = await getCurrentWalletConnected();
+    const walletAddr = await walletResponse.address;
+
       setOpenBackdrop(true);
       try{
         await bookingInstance.methods.refund(
         tokenId).send(
-        {from: walletAddress}).then(function(receipt){
+        {from: walletAddr}).then(function(receipt){
           let txtHash = receipt["transactionHash"]
           console.log(receipt["transactionHash"])
           loadBlockchainData()
@@ -374,7 +389,7 @@ function showWidthdraw(tokenId, startDate, noOfWeeks, deposit, isRefund, key )  
   }
 };
     return (
-      <div>
+      <div className="grid">
       <Backdrop className={classes.backdrop} open={openBackdrop}>
         <CircularProgress color="inherit" />
       </Backdrop>

@@ -26,15 +26,16 @@ function Rental(props) {
 
 
   useEffect(() => {
-    //if (walletAddress !== "")
-   setWallet(walletInfo);
    loadProperyList(walletInfo);
 
-  },[walletInfo, myPropertiesRef]);
+  },[]);
 
 
 
  async function loadProperyList(address)  {
+
+   const walletResponse = await getCurrentWalletConnected();
+   const walletAddr = await walletResponse.address;
 
   // Get web3 provider - pointing to connected or ganache
   const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
@@ -44,14 +45,14 @@ function Rental(props) {
   // save to state ?/
   //setPropertyManagerInstance(propertyManagerInstance);
   // get count of the properties on blockhain via web3
-  const propertyCount = await propertyManagerInstance.methods.getCount().call({from: address});
+  const propertyCount = await propertyManagerInstance.methods.getCount().call({from: walletAddr});
   // save count
   setPropertyCount(propertyCount);
   // loop and get each propertu details
   var newProperties = [];
   for (var i = 0; i <= propertyCount; i++) {
     try {
-      const property = await propertyManagerInstance.methods.getDetails(i).call({from: address});
+      const property = await propertyManagerInstance.methods.getDetails(i).call({from: walletAddr});
       //save to state
       newProperties = newProperties.concat( property);
       setProperties(newProperties);
@@ -84,7 +85,7 @@ function Rental(props) {
           </main>
           <br/>
         <div className="row">
-          <PropertyListings properties= {properties} showButtons={true} ></PropertyListings>
+          <PropertyListings properties= {properties} showButtons={true}/>
         </div>
       </div>
     </div>

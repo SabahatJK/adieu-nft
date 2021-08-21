@@ -3,6 +3,7 @@ import React from "react";
 
 function About(account) {
     return (
+      <div className="mainMontent">
       <div align="center" className="about">
           <h1 align="center">We Created a dual-sync / one-chain NFT</h1>
           <br/>
@@ -26,6 +27,7 @@ function About(account) {
                 - Booking Manager : 0x98bF4D1E6EC0159026806a6B358eeA4D2dDDC263
 
           </p>
+      </div>
       </div>
     );
   }

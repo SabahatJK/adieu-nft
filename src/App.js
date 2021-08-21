@@ -28,22 +28,7 @@ import MyRentals from './components/MyRentals';
 import FastForward from './components/FastForward';
 import './App.css';
 
-//import { ConnectionProvider } from "./connectContext.js";
-import { makeStyles } from '@material-ui/core/styles';
 import Button from '@material-ui/core/Button';
-
-const useStyles = makeStyles((theme) => ({
-  root: {
-    '& > *': {
-      margin: theme.spacing(1),
-    },
-  },
-}));
-
-
-
-
-//window.ethereum.on('accountsChanged', handleAccountsChanged);
 
 function App() {
 
@@ -53,11 +38,6 @@ function App() {
    const [status, setStatus] = useState("");
    //const [networkId, setNetworkId] = useState("");
    const [networkName, setNetworkName] = useState("");
-   const classes = useStyles();
-   const walletInfo = {
-       walletAddress: "",
-       networkId : ""
-   }
 
    useLayoutEffect(() => {
 
@@ -67,6 +47,7 @@ function App() {
 
             if (networkId.length > 0) {
                connectWalletPressed();
+               window.location.reload();
              };
            });
          }
@@ -77,6 +58,7 @@ function App() {
          window.ethereum.on("accountsChanged", (accounts) => {
            if (accounts.length > 0) {
              connectWalletPressed();
+             window.location.reload();
            };
          });
        };
@@ -87,7 +69,6 @@ function App() {
         setWallet(address);
         setStatus(status);
         setWallet(address);
-        //setNetworkId(networkId);
         setNetworkName(networkName);
 
       };
@@ -111,7 +92,7 @@ const connectWalletPressed = async () => {
 
 
  return (
-      <div className="main" align="center">
+      <div  align="center">
         <Header/>
 
         <div align="center">
@@ -135,6 +116,7 @@ const connectWalletPressed = async () => {
         <br/>
       </div>
       <br/>
+      <div className="main">
       <WalletProvider value={walletAddress}>
           <Router>
                 <div className="nav"  align="center">
@@ -175,6 +157,7 @@ const connectWalletPressed = async () => {
 
          </Router>
        </WalletProvider>
+       </div>
       <Footer></Footer>
     </div>
   );

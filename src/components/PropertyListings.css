@@ -16,7 +16,14 @@ td {
 .bold {
     font-weight: bold;
 }
+.blackBackground {
+  background-color: black;
+  width:100%;
+}
+.mainMontent {
+  width:100%;
 
+}
 .button {
     background-color: black; /* Green */
     border: none;
@@ -131,4 +138,14 @@ td {
   border: 0.1rem outset pink;
 
 
+}
+.page {
+  margin-left:100px;
+
+}
+
+.grid {
+  margin: auto;
+  width: 90%;
+  text-align: center;
 }

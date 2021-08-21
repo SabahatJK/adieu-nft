@@ -1,42 +1,31 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
-import Modal from 'react-modal';
+import React, { useState, useEffect } from "react";
 import moment from 'moment';
-import DayPickerInput from 'react-day-picker/DayPickerInput';
-import 'react-day-picker/lib/style.css';
-import {
-  formatDate,
-  parseDate,
-} from 'react-day-picker/moment';
 
 import Web3 from 'web3'
 import {
-  connectWallet,
+  /*connectWallet,*/
   getCurrentWalletConnected,
   extractBlockchainError //import here
 } from "./connection.js"
+import { PROPERTMANAGER_ABI, PROPERTMANAGER_ADDRESS } from '../config'
 
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
-import DialogContentText from '@material-ui/core/DialogContentText';
-import DialogTitle from '@material-ui/core/DialogTitle';
 import Button from '@material-ui/core/Button';
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import TextField from '@material-ui/core/TextField';
-import InputLabel from '@material-ui/core/InputLabel';
 import Select from '@material-ui/core/Select';
 import MenuItem from '@material-ui/core/MenuItem';
-import Checkbox from '@material-ui/core/Checkbox';
-import Input from '@material-ui/core/Input';
 import { TextareaAutosize } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import WalletContext from './context';
+//import WalletContext from './context';
 
 //import ConnectContext from "./Conn"
 //import {pinJSONToIPFS} from './pinata.js'
 
-import PropertyListings from './PropertyListings';
+import PropertyListingsA from './PropertyListingsA';
 import './PropertyListings.css'
 
 
@@ -87,7 +76,7 @@ const stylesAddress={
 const stylesTextArea={
   width: "100%"
 }
-const ITEM_HEIGHT = 48;
+/*const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
   PaperProps: {
@@ -97,7 +86,7 @@ const MenuProps = {
     },
   },
 };
-
+*/
 // @dev Takes care adding a new listing
 // charges 100 wei for each transaction
 // creates an object in pinata for ifps and the tokenuri
@@ -107,8 +96,8 @@ function MyProperties(props)  {
   const defaultValues = {
           address : '',
           rent : '',
-          startDate: '',
-          endDate : '',
+          startDate: moment(),
+          endDate : moment(),
           ifpsUrl : '',
           beds : '',
           baths: '',
@@ -120,29 +109,31 @@ function MyProperties(props)  {
           imageUrl : '',
           description: '',
     };
-    const [walletAddress, setWallet] = useState("");
+
+    const today = moment().format("L");
+    //const [walletAddress, setWallet] = useState("");
     const [formValues, setFormValues] = useState(defaultValues);
     const [modalIsOpen, setModalIsOpen] = useState(false);
-    const [propertyCount, setPropertyCount] = useState(-1);
+    //const [propertyCount, setPropertyCount] = useState(-1);
     const[propertyManagerInstance, setPropertyManagerInstance] = useState(null);
     const [properties, setProperties] = useState([]);
-    const myPropertiesRef = useRef(properties);
 
-    const [ifpsUrl, setIfpsUrl]  = useState("");
+
+    //const [ifpsUrl, setIfpsUrl]  = useState("");
     const [submitDisabled, setSubmitDisabled]  = useState(false);
-    const [tokenUri, setTokenUri]  = useState("");
+    //const [tokenUri, setTokenUri]  = useState("");
     const [error, setError]  = useState("");
     const [formErrors, setFormError]  = useState([]);
     const [counter, setSetCounter]  = useState(0);
 
 
-    const [web3, setWeb3] = useState(null);
-    const[bookingInstance, setBookingInstance] = useState(null);
+    //const [web3, setWeb3] = useState(null);
+    //const[bookingInstance, setBookingInstance] = useState(null);
 
     const classes = useStyles();
     const [openBackdrop, setOpenBackdrop] = useState(false);
-    const[disabled, setDisabled] = useState("");
-    const walletInfo = useContext(WalletContext);
+    //const[disabled, setDisabled] = useState("");
+    //const walletInfo = useContext(WalletContext);
     const heatingTypes = [
       'No Data',
       'Electric',
@@ -164,52 +155,14 @@ function MyProperties(props)  {
 
 
   useEffect(() => {
-    setWallet(walletInfo);
-    loadProperyList(walletInfo);
-  },[walletInfo, myPropertiesRef]);
+    loadProperyList();
+  },[]);
 
 
     //const classes = useStyles();
     // handle the start date, should have had a single handler for
     // start date and end date, but somehow it was not working
     // so adding a seperate handler for each, have to fix
-    const handleDayChangeStartDate = (selectedDay, modifiers, dayPickerInput) =>{
-      const input = dayPickerInput.getInput();
-      /*this.setState({
-        selectedDay,
-        isEmpty: !input.value.trim()
-      });
-
-      */
-      setFormValues({
-        ...formValues,
-        startDate: input.value,
-      });
-    }
-    const handleDayChangeEndDate = (selectedDay, modifiers, dayPickerInput) =>{
-      const input = dayPickerInput.getInput();
-      /*this.setState({
-        selectedDay,
-        isEmpty: !input.value.trim()
-      });
-      this.setState({
-        endDate : input.value
-      });*/
-      setFormValues({
-        ...formValues,
-        endDate: input.value,
-      });
-
-
-    }
-
-    const handleInputChange = (e) => {
-      const { name, value } = e.target;
-      setFormValues({
-        ...formValues,
-        [name]: value,
-      });
-    };
 
     const handleChange = (e) => {
       const { name, value } = e.target;
@@ -219,7 +172,7 @@ function MyProperties(props)  {
       });
     };
 
-    const handleChangeMultiple = (e) => {
+  /*  const handleChangeMultiple = (e) => {
       const { name, options } = e.target;
       const value = [];
       for (let i = 0, l = options.length; i < l; i += 1) {
@@ -232,7 +185,7 @@ function MyProperties(props)  {
         [name]: value,
       });
   };
-
+*/
 
     // handle all integer inputs
     const handleIntegerChange = event => {
@@ -254,7 +207,9 @@ function MyProperties(props)  {
       setFormError([]);
       if (validateForm())
       {
+
         try{
+
           setSubmitDisabled(true);
           generateIfps();
 
@@ -262,7 +217,7 @@ function MyProperties(props)  {
           catch(error){
             setErrorMessage(error.message);
             setSubmitDisabled(false);
-
+            alert(error.message);
           }
 
         }
@@ -311,9 +266,9 @@ function MyProperties(props)  {
           }
       }
       else {
-
       let ifpsHash = pinataResponse.pinataUrl;
-      setIfpsUrl(ifpsHash);
+
+      //setIfpsUrl(ifpsHash);
       generateTokenURI(ifpsHash);
       }
   }
@@ -344,16 +299,18 @@ function MyProperties(props)  {
      }
      else {
        let tokenUri = pinataResponse.pinataUrl;
-       setTokenUri(tokenUri);
+       //setTokenUri(tokenUri);
        addListing(ifpsHash, tokenUri);
       }
   }
 // load data from blockhain
   async function loadProperyList (address) {
     //setProperties([]);
+    const walletResponse = await getCurrentWalletConnected();
+    const walletAddr = await walletResponse.address;
 
     const web3 = new Web3(Web3.givenProvider || "http://localhost:8545")
-    setWeb3(web3);
+    //setWeb3(web3);
     // get accounts
 
     const propertyManagerInstance = new web3.eth.Contract(PROPERTMANAGER_ABI, PROPERTMANAGER_ADDRESS)
@@ -363,9 +320,9 @@ function MyProperties(props)  {
     // get count of the properties on blockhain via web3
     try
     {
-      propertyCount = await propertyManagerInstance.methods.getOwnerCount(address).call()
+      propertyCount = await propertyManagerInstance.methods.getOwnerCount(walletAddr).call({from: walletAddr});
       // save count
-      setPropertyCount(propertyCount);
+      //setPropertyCount(propertyCount);
     }
     catch (error) {
       let sError = extractBlockchainError(error.message);
@@ -375,8 +332,8 @@ function MyProperties(props)  {
     var newProperties = [];
     // loop and get each propertu details
     for (var i = 0; i < propertyCount; i++) {
-      const index = await propertyManagerInstance.methods.ownerTokens(address, i).call({from : address});
-      const property = await propertyManagerInstance.methods.getDetails(index).call({from : address});
+      const index = await propertyManagerInstance.methods.ownerTokens(walletAddr, i).call({from : walletAddr});
+      const property = await propertyManagerInstance.methods.getDetails(index).call({from : walletAddr});
       newProperties = newProperties.concat( property);
       setSetCounter(i + 1);
       //setProperties([...properties, property]);
@@ -388,16 +345,19 @@ function MyProperties(props)  {
   // add listing to blockchain
   async function addListing(ifpsHash, Uri) {
 
+    const walletResponse = await getCurrentWalletConnected();
+    const walletAddr = await walletResponse.address;
+
     setSubmitDisabled(true);
     setOpenBackdrop(true);
     try {
-      await propertyManagerInstance.methods.addListing(walletInfo,
+      await propertyManagerInstance.methods.addListing(walletAddr,
                           formValues.address,
                           Uri,
                           ifpsHash,
                           formValues.rent,
                           moment(formValues.startDate).unix(),
-                          moment(formValues.endDate).unix()).send({from: walletAddress, value: 100})
+                          moment(formValues.endDate).unix()).send({from: walletAddr, value: 100})
                           .then(function(receipt){
                               console.log(receipt);
                               closeModal();
@@ -405,10 +365,10 @@ function MyProperties(props)  {
                           });
 
         setSetCounter(counter + 1);
-        loadProperyList(walletAddress);
+        loadProperyList(walletAddr);
 
     } catch(error) {
-      const property = {};
+
 
       let sError = extractBlockchainError(error.message);
       setError("Add Listing  @ : " + sError);
@@ -462,6 +422,20 @@ function MyProperties(props)  {
       setErrorMessage(sError);
       isValid = false;
     }
+
+    if ( moment(formValues.startDate) < moment(moment().format("L"))  )
+    {
+      let sError = "Start Date cannot be less than today"
+      setErrorMessage(sError);
+      isValid = false;
+    }
+    if ( moment(formValues.ensDate) < moment(moment().format("L"))  )
+    {
+      let sError = "End Date cannot be less than today"
+      setErrorMessage(sError);
+      isValid = false;
+    }
+
     if (formValues.endDate.trim() === "" || !dateReg.test(formValues.endDate.trim())  )
     {
       let sError = "Please enter a valid End Date"
@@ -469,7 +443,7 @@ function MyProperties(props)  {
       isValid = false;
     }
 
-    if ( (moment(formValues.endDate) <= moment(formValues.startDate).add(7, "days"))  )
+    if ( (moment(formValues.endDate) <= moment(formValues.startDate).add(7, "days"))   )
     {
       let sError = "The property has to be listed for atleast a  week"
       setErrorMessage(sError);
@@ -555,7 +529,7 @@ function MyProperties(props)  {
         <br/>
         <Dialog open={modalIsOpen}
           aria-labelledby="form-dialog-title"
-          fullWidth='true'
+          fullWidth={true}
           maxWidth={"md"}
         >
         <DialogContent>
@@ -645,7 +619,7 @@ function MyProperties(props)  {
 
                             format="MM/dd/yyyy"
                             inputProps={{
-                              min: '08/21/2021',
+                              min: moment().format('YYYY-MM-DD')
 
                             }}
                             defaultValue={formValues.startDate}
@@ -659,18 +633,16 @@ function MyProperties(props)  {
                         End Date :
                         </td>
                       <td>
-
                       <TextField id="endDate" name="endDate"
                           required
                           type="date"
                           value={formValues.endDate}
-
                           format="MM/dd/yyyy"
                           inputProps={{
-                            min: '08/21/2021',
+                            min: moment().format('YYYY-MM-DD')
 
                           }}
-                          defaultValue={formValues.endDate}
+                          defaultValue={new Date()}
                           placeholder="Enter availability end Date"
                           InputLabelProps={{
                             required: true,
@@ -731,7 +703,7 @@ function MyProperties(props)  {
                       name="type"
                       value={formValues.type}
                       defaultValue='Choose Type'
-                      disabled={disabled}
+                      //disabled={disabled}
                       onChange={handleChange}
                       className={classes.selectEmpty}
                       >
@@ -749,7 +721,7 @@ function MyProperties(props)  {
                       name="parking"
                       value={formValues.parking}
                       defaultValue='Choose Parking'
-                      disabled={disabled}
+                      //disabled={disabled}
                       onChange={handleChange}
                       className={classes.selectEmpty}
                       >
@@ -815,7 +787,7 @@ function MyProperties(props)  {
                             name="heating"
                             value={formValues.heating}
                             defaultValue={formValues.heating}
-                            disabled={disabled}
+                            //disabled={disabled}
                             onChange={handleChange}
                             className={classes.selectEmpty}
                             >
@@ -836,7 +808,7 @@ function MyProperties(props)  {
                             name="cooling"
                             value={formValues.cooling}
                             defaultValue={formValues.cooling}
-                            disabled={disabled}
+                            //disabled={disabled}
                             onChange={handleChange}
                             className={classes.selectEmpty}
                             >
@@ -862,7 +834,6 @@ function MyProperties(props)  {
                                 min: 1,
 
                               }}
-                              required pattern=".*\.myco\..*"
                               defaultValue={formValues.imageUrl}
                               placeholder="Enter the image URL"
                               InputLabelProps={{
@@ -927,7 +898,7 @@ function MyProperties(props)  {
 
         <div className="row">
 
-          <PropertyListings properties={properties} showButtons={false} ></PropertyListings>
+          <PropertyListingsA properties={properties} showButtons={false} ></PropertyListingsA>
         </div>
 
       </div>

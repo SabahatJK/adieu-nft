@@ -73,7 +73,7 @@ function PropertyDetails(props)  {
       return (responseData);
 
      } catch(error) {
-      console.error(error);
+      //console.error(error);
     }
   }
 

@@ -443,6 +443,7 @@ function addWalletListener() {
         setTokenAddr("");
         setSubmitDisabled(false);
         setDisabled(false);
+        
     };
     // Close Modal
   function closeModal() {

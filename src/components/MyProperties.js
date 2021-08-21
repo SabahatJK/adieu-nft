@@ -39,7 +39,6 @@ import WalletContext from './context';
 import PropertyListings from './PropertyListings';
 import './PropertyListings.css'
 
-import { PROPERTMANAGER_ABI, PROPERTMANAGER_ADDRESS } from '../config'
 
 const useStyles = makeStyles((theme) => ({
   overrides: {
@@ -404,8 +403,9 @@ function MyProperties(props)  {
                               closeModal();
 
                           });
+
         setSetCounter(counter + 1);
-        //loadProperyList(walletAddress);
+        loadProperyList(walletAddress);
 
     } catch(error) {
       const property = {};
@@ -603,7 +603,9 @@ function MyProperties(props)  {
                      <ul className="error">
                           { formErrors.map((err => {
                             return (
+
                                 <li>{err}</li>
+
                             )
                           }))
                         }

@@ -78,9 +78,9 @@ function PropertyListings(props) {
                          <TableHead >
                           <StyledTableRow>
 
-                            <StyledTableCell align="left">Address : <span>{property.pAddr} &nbsp;</span>
+                            <StyledTableCell align="left"><span>{property.pAddr} &nbsp;</span>
                             </StyledTableCell>
-                            {!props.showButtons &&  <StyledTableCell align="left">Token : <span>{property.token} &nbsp;</span>
+                            {!props.showButtons &&  <StyledTableCell align="left">Token : <span>{property.token.trim()}</span>
                             </StyledTableCell>}
                             <StyledTableCell align="left">
                               Rent: <span>{(property.rentFee/ 1000000000000000000).toFixed(3)} eth </span>

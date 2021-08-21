@@ -23,7 +23,13 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import Button from '@material-ui/core/Button';
 import Backdrop from '@material-ui/core/Backdrop';
 import CircularProgress from '@material-ui/core/CircularProgress';
-
+import TextField from '@material-ui/core/TextField';
+import InputLabel from '@material-ui/core/InputLabel';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
+import Checkbox from '@material-ui/core/Checkbox';
+import Input from '@material-ui/core/Input';
+import { TextareaAutosize } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import WalletContext from './context';
 
@@ -75,6 +81,23 @@ const useStyles = makeStyles((theme) => ({
  },
 
 }));
+const stylesAddress={
+ width: "300px"
+}
+
+const stylesTextArea={
+  width: "100%"
+}
+const ITEM_HEIGHT = 48;
+const ITEM_PADDING_TOP = 8;
+const MenuProps = {
+  PaperProps: {
+    style: {
+      maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP,
+      width: 250,
+    },
+  },
+};
 
 // @dev Takes care adding a new listing
 // charges 100 wei for each transaction
@@ -110,7 +133,7 @@ function MyProperties(props)  {
     const [submitDisabled, setSubmitDisabled]  = useState(false);
     const [tokenUri, setTokenUri]  = useState("");
     const [error, setError]  = useState("");
-    const [multipleErrors, setMultipleError]  = useState([]);
+    const [formErrors, setFormError]  = useState([]);
     const [counter, setSetCounter]  = useState(0);
 
 
@@ -121,7 +144,24 @@ function MyProperties(props)  {
     const [openBackdrop, setOpenBackdrop] = useState(false);
     const[disabled, setDisabled] = useState("");
     const walletInfo = useContext(WalletContext);
+    const heatingTypes = [
+      'No Data',
+      'Electric',
+      'Gas',
+      'Oil',
+      'Forced Air',
+      'Heat Pump',
+    ];
 
+    const coolingTypes = [
+      'No Data',
+      'Electric',
+      'Gas',
+      'Oil',
+      'Central Air',
+      'Window Unit',
+      'Split'
+    ];
 
 
   useEffect(() => {
@@ -179,6 +219,22 @@ function MyProperties(props)  {
         [name]: value,
       });
     };
+
+    const handleChangeMultiple = (e) => {
+      const { name, options } = e.target;
+      const value = [];
+      for (let i = 0, l = options.length; i < l; i += 1) {
+        if (options[i].selected) {
+          value.push(options[i].value);
+        }
+      }
+      setFormValues({
+        ...formValues,
+        [name]: value,
+      });
+  };
+
+
     // handle all integer inputs
     const handleIntegerChange = event => {
       // regex to check for integers
@@ -196,7 +252,7 @@ function MyProperties(props)  {
     }
     const handleSubmit =  async (event) => {
       event.preventDefault();
-      setMultipleError([]);
+      setFormError([]);
       if (validateForm())
       {
         try{
@@ -240,12 +296,15 @@ function MyProperties(props)  {
       const pinataResponse =  await fetch('/.netlify/functions/pinata', {
                                 method: "POST",
                                 body: JSON.stringify({JSONBody})
-                              }).then((res) => res.json());
+                              }).then((res) => res.json()
+
+                              );
 
       // check for sucess
       if (!pinataResponse.success) {
         setSubmitDisabled(false);
-        setError(pinataResponse.message)
+        setError(pinataResponse.message);
+        alert(pinataResponse.message);
         return {
               success: false,
               status: pinataResponse.message
@@ -253,13 +312,14 @@ function MyProperties(props)  {
           }
       }
       else {
+
       let ifpsHash = pinataResponse.pinataUrl;
-      setIfpsUrl(ifpsHash)
-      generateTokenURI()
+      setIfpsUrl(ifpsHash);
+      generateTokenURI(ifpsHash);
       }
   }
 
-  async function generateTokenURI()  {
+  async function generateTokenURI(ifpsHash)  {
       //var self = this
       const JSONBody = {
         Address : formValues.address,
@@ -286,7 +346,7 @@ function MyProperties(props)  {
      else {
        let tokenUri = pinataResponse.pinataUrl;
        setTokenUri(tokenUri);
-       addListing()
+       addListing(ifpsHash, tokenUri);
       }
   }
 // load data from blockhain
@@ -319,44 +379,37 @@ function MyProperties(props)  {
       const index = await propertyManagerInstance.methods.ownerTokens(address, i).call({from : address});
       const property = await propertyManagerInstance.methods.getDetails(index).call({from : address});
       newProperties = newProperties.concat( property);
-      setSetCounter(i);
+      setSetCounter(i + 1);
+      //setProperties([...properties, property]);
       setProperties(newProperties);
     }
 
   }
 
   // add listing to blockchain
-  async function addListing() {
+  async function addListing(ifpsHash, Uri) {
 
     setSubmitDisabled(true);
     setOpenBackdrop(true);
     try {
       await propertyManagerInstance.methods.addListing(walletInfo,
                           formValues.address,
-                          tokenUri,
-                          ifpsUrl,
+                          Uri,
+                          ifpsHash,
                           formValues.rent,
                           moment(formValues.startDate).unix(),
                           moment(formValues.endDate).unix()).send({from: walletAddress, value: 100})
                           .then(function(receipt){
                               console.log(receipt);
-                              closeModal()
-                              const property = {};
-                              property.pAddr = formValues.pAddr;
-                              property.rentFee = formValues.rent;
-                              property.depositFee = formValues.deposit;
-                              property.nonRefundableFee = formValues.nonRefundableFee;
-                              property.startAvailability = formValues.startDate;
-                              property.endAvailability = formValues.endDate;
-                              property.ifps = formValues.ifpsUrl;
-                              properties.concat(property);
-                              setProperties(properties);
-                              PropertyListings.forceUpdate();
+                              closeModal();
 
-                          })
-
+                          });
+        setSetCounter(counter + 1);
+        //loadProperyList(walletAddress);
 
     } catch(error) {
+      const property = {};
+
       let sError = extractBlockchainError(error.message);
       setError("Add Listing  @ : " + sError);
       //closeModal();
@@ -369,7 +422,7 @@ function MyProperties(props)  {
 
   function setErrorMessage(sErr) {
 
-    setMultipleError([...multipleErrors, sErr]);
+    setFormError([...formErrors, sErr]);
 
     }
 
@@ -400,7 +453,8 @@ function MyProperties(props)  {
       setErrorMessage(sError);
       isValid = false;
     }
-    var dateReg = /^\d{2}[/]\d{2}[/]\d{4}$/
+    var dateReg = /^\d{4}[-]\d{2}[-]\d{2}$/
+
 
     if (formValues.startDate.trim() === "" || !dateReg.test(formValues.startDate.trim())  )
     {
@@ -408,14 +462,14 @@ function MyProperties(props)  {
       setErrorMessage(sError);
       isValid = false;
     }
-    if (formValues.endDate.trim() === "" || !dateReg.test(formValues.endDate)  )
+    if (formValues.endDate.trim() === "" || !dateReg.test(formValues.endDate.trim())  )
     {
       let sError = "Please enter a valid End Date"
       setErrorMessage(sError);
       isValid = false;
     }
 
-    if ( (moment(formValues.endDate) <= moment(formValues.startDate).add(8, "days"))  )
+    if ( (moment(formValues.endDate) <= moment(formValues.startDate).add(7, "days"))  )
     {
       let sError = "The property has to be listed for atleast a  week"
       setErrorMessage(sError);
@@ -474,13 +528,13 @@ function MyProperties(props)  {
       setErrorMessage(sError);
       isValid = false;
     }
-    alert(isValid);
     return isValid;
 
   };
+
   // open Modal
   function openModal() {
-        setMultipleError([]);
+        setFormError([]);
         setError("");
         setModalIsOpen(true);
         setSubmitDisabled(false);
@@ -501,8 +555,8 @@ function MyProperties(props)  {
         <br/>
         <Dialog open={modalIsOpen}
           aria-labelledby="form-dialog-title"
-          fullWidth={"lg"}
-          maxWidth={"lg"}
+          fullWidth='true'
+          maxWidth={"md"}
         >
         <DialogContent>
         <Backdrop className={classes.backdrop} open={openBackdrop}>
@@ -543,15 +597,13 @@ function MyProperties(props)  {
                 <tr>
                   <td colSpan="4">
 
-                    { multipleErrors.length > 0  &&
+                    { formErrors.length > 0  &&
                     <div className="error">
                      ERRORS : Please correct the errors and continue
                      <ul className="error">
-                          { multipleErrors.map((err => {
+                          { formErrors.map((err => {
                             return (
-
                                 <li>{err}</li>
-
                             )
                           }))
                         }
@@ -561,109 +613,148 @@ function MyProperties(props)  {
                 }
                   </td>
                 </tr>
-                <tr className="table_padding">
+                <tr className="table_padding" >
                   <td>
                     Address :
                   </td>
-                  <td>
-                    <input
-                        id="address"
-                        name="address"
-                        type="text"
-                        style={{width: "370px"}}
-                        placeholder="Enter Address"
-                        value={formValues.address}
-                        onChange={handleChange}
-                    />
+                  <td colspan="3">
+                  <TextField id="address" name="address"
+                      required
+                      style={stylesAddress}
+                      value={formValues.address}
+                      defaultValue={formValues.address}
+                      placeholder="Enter Address"
+                      InputLabelProps={{
+                        required: true,
+                      }}
+                    onChange={handleChange} />
+
+
                   </td>
+                      <td>
+                        Start Date :
+                      </td>
+                      <td>
 
+                        <TextField id="startDate" name="startDate"
+                            required
+                            type="date"
+                            value={formValues.startDate}
 
+                            format="MM/dd/yyyy"
+                            inputProps={{
+                              min: '08/21/2021',
+
+                            }}
+                            defaultValue={formValues.startDate}
+                            placeholder="Enter availability Start Date"
+                            InputLabelProps={{
+                              required: true,
+                            }}
+                            onChange={handleChange} />
+                          </td>
+                      <td>
+                        End Date :
+                        </td>
+                      <td>
+
+                      <TextField id="endDate" name="endDate"
+                          required
+                          type="date"
+                          value={formValues.endDate}
+
+                          format="MM/dd/yyyy"
+                          inputProps={{
+                            min: '08/21/2021',
+
+                          }}
+                          defaultValue={formValues.endDate}
+                          placeholder="Enter availability end Date"
+                          InputLabelProps={{
+                            required: true,
+                          }}
+                          onChange={handleChange} />
+
+                        </td>
+                  </tr>
+                  <tr>
                   <td>
                     Rent :
                   </td>
                   <td>
-                    <input
-                        id="rent"
-                        name="rent"
-                        type="text"
-                        placeholder="Enter rent in wei"
-                        value={formValues.rent}
-                        onChange={handleIntegerChange}
 
-                    />
+                    <TextField id="rent" name="rent"
+                        required
+                        type="Number"
+                        value={formValues.rent}
+                        inputProps={{
+                          min: 1,
+                        }}
+                        defaultValue={formValues.rent}
+                        placeholder="Enter rent in wei"
+                        InputLabelProps={{
+                          required: true,
+                        }}
+                        onChange={handleIntegerChange} />
+
                   </td>
                   <td>
                   SqtFeet :
                   </td>
                   <td>
-                    <input
-                        id="sqtFeet"
-                        name="sqtFeet"
-                        type="text"
-                        placeholder="Enter SqtFeet"
+                    <TextField id="sqtFeet" name="sqtFeet"
+                        required
+                        type="Number"
                         value={formValues.sqtFeet}
-                        onChange={handleIntegerChange}
-                    />
+                        inputProps={{
+                          min: 100,
+                        }}
+                        defaultValue={formValues.sqtFeet}
+                        placeholder="Enter square footage"
+                        InputLabelProps={{
+                          required: true,
+                        }}
+                        onChange={handleChange} />
+
                   </td>
 
-                </tr>
-                <tr cellPadding="10px">
-                    <td>
-                      Start Date :
-                    </td>
-                    <td>
-                    <DayPickerInput
-                      id="startDate"
-                      name="startDate"
-                      formatDate={formatDate}
-                      value={formValues.startDate}
-                      parseDate={parseDate}
-                      placeholder={`${formatDate(new Date())}`}
-                      onDayChange={handleDayChangeStartDate}
-
-                    />
-                      </td>
-                    <td>
-                      End Date :
-                      </td>
-                    <td>
-
-                      <DayPickerInput
-                        id="startDate"
-                        name="startDate"
-                        value={formValues.endDate}
-                        formatDate={formatDate}
-                        parseDate={parseDate}
-                        placeholder={`${formatDate(new Date())}`}
-                        onDayChange={handleDayChangeEndDate}
-                        disabledDays = {[
-                                {
-                                  before: `{moment(formValues.startDate).add(8, "days").format("L")}`
-                                },
-                              ]}
-
-                      />
-                      </td>
                       <td>
                   Type :
                   </td>
                   <td>
 
-
-                  <select id="type" name="type"
+                  <Select
+                     required
+                      id="type"
+                      name="type"
+                      value={formValues.type}
+                      defaultValue='Choose Type'
+                      disabled={disabled}
                       onChange={handleChange}
-                      defaultValue={formValues.type}
-                    >
-                      <option value="" disabled>
-                                Choose Type
-                              </option>
-                      <option value="Single Family">Single Family</option>
-                      <option value="Townhouse">Townhouse</option>
-                      <option value="Condo">Condo</option>
-                    </select>
-
-
-
+                      className={classes.selectEmpty}
+                      >
+                        <MenuItem disabled value='Choose Type'>Choose Type</MenuItem>
+                        <MenuItem value='Single Family'>Single Family</MenuItem>
+                        <MenuItem value='Townhouse'>'Townhouse'</MenuItem>
+                        <MenuItem value='Condo'>Condo</MenuItem>
+                    </Select>
+                  </td>
+                  <td>Parking</td>
+                  <td>
+                  <Select
+                     required
+                      id="parking"
+                      name="parking"
+                      value={formValues.parking}
+                      defaultValue='Choose Parking'
+                      disabled={disabled}
+                      onChange={handleChange}
+                      className={classes.selectEmpty}
+                      >
+                        <MenuItem value='No Parking space'>No Parking space</MenuItem>
+                        <MenuItem value='1 Attached Garage space'>'1 Attached Garage space'</MenuItem>
+                        <MenuItem value='2 Attached Garage space'>2 Attached Garage space</MenuItem>
+                    </Select>
                   </td>
 
 
@@ -673,14 +764,21 @@ function MyProperties(props)  {
                     Beds :
                   </td>
                   <td>
-                    <input
-                        id="beds"
-                        name="beds"
-                        type="text"
-                        placeholder="Enter # of Beds"
+                    <TextField id="beds" name="beds"
+                        required
+                        type="Number"
                         value={formValues.beds}
-                        onChange={handleIntegerChange}
-                    />
+                        inputProps={{
+                          min: 1,
+
+                        }}
+                        defaultValue={formValues.beds}
+                        placeholder="Enter # of Beds"
+                        InputLabelProps={{
+                          required: true,
+                        }}
+                        onChange={handleChange} />
+
                   </td>
 
 
@@ -688,95 +786,112 @@ function MyProperties(props)  {
                     Baths :
                   </td>
                   <td>
-                    <input
-                        id="baths"
-                        name="baths"
-                        type="text"
-                        placeholder="Enter # of Baths"
+
+                    <TextField id="baths" name="baths"
+                        required
+                        type="Number"
                         value={formValues.baths}
-                        onChange={handleIntegerChange}
-                    />
-                  </td>
-                  <td>Parking</td>
-                  <td>
-                  <select id="parking" name="parking"
-                      defaultValue={formValues.parking}
-                      onChange={handleChange}
-                    >
-                      <option value="" disabled>
-                                Choose Parking
-                      </option>
-                      <option value="No Parking space">No Parking Space</option>
-                      <option value="1 Attached Garage space">1 Attached Garage space</option>
-                      <option value="2 Attached Garage space">2 Attached Garage space</option>
-                    </select>
+                        inputProps={{
+                          min: 1,
+
+                        }}
+                        defaultValue={formValues.baths}
+                        placeholder="Enter # of Baths"
+                        InputLabelProps={{
+                          required: true,
+                        }}
+                        onChange={handleChange} />
 
                   </td>
-                  </tr>
 
-
-                  <tr>
                         <td> Heating</td>
                         <td>
-                            <select id="heating" name="heating"
-                            onChange={handleChange}
-                            defaultValue={formValues.heating}
-                            >
-                              <option value="" disabled>
-                                Choose Heating Type
-                              </option>
 
-                              <option value="Electric">Electric</option>
-                              <option value="Gas">Gas</option>
-                            </select>
-                        </td>
+                        <Select
+                           required
+                            id="heating"
+                            name="heating"
+                            value={formValues.heating}
+                            defaultValue={formValues.heating}
+                            disabled={disabled}
+                            onChange={handleChange}
+                            className={classes.selectEmpty}
+                            >
+                              {heatingTypes.map((name) => (
+                                <MenuItem key={name} value={name} >
+                                  {name}
+                                </MenuItem>
+                              ))}
+                          </Select>
+
+
+                          </td>
                         <td> Cooling</td>
                         <td>
-                            <select id="cooling" name="cooling"
+                        <Select
+                           required
+                            id="cooling"
+                            name="cooling"
+                            value={formValues.cooling}
                             defaultValue={formValues.cooling}
+                            disabled={disabled}
                             onChange={handleChange}
+                            className={classes.selectEmpty}
                             >
-                              <option value="" disabled className="disabledOpt">
-                                Choose Cooling Type
-                              </option>
-                              <option value="Electric">Electric</option>
-                              <option value="Gas">Gas</option>
-                            </select>
+                              {coolingTypes.map((name) => (
+                                <MenuItem key={name} value={name} >
+                                  {name}
+                                </MenuItem>
+                              ))}
+                          </Select>
                         </td>
-
-                        <td>
+                        </tr>
+                        <tr>
+                        <td >
                             Image :
                           </td>
-                          <td>
-                            <input
-                                id="imageUrl"
-                                name="imageUrl"
-                                type="text"
-                                style={{width: "250px"}}
-                                placeholder="Enter Image URL"
-                                value={formValues.imageUrl}
-                                onChange={handleChange}
-                            />
+                          <td colSpan="7">
+                          <TextField id="imageUrl" name="imageUrl"
+                              required
+                              type="url"
+                              style={stylesTextArea}
+                              value={formValues.imageUrl}
+                              inputProps={{
+                                min: 1,
+
+                              }}
+                              required pattern=".*\.myco\..*"
+                              defaultValue={formValues.imageUrl}
+                              placeholder="Enter the image URL"
+                              InputLabelProps={{
+                                required: true,
+                              }}
+                              onChange={handleChange} />
+
+
+
                         </td>
                   </tr>
                   <tr>
                     <td>Description:</td>
-                    <td colSpan="5">
-                    <textarea
-                    id="description" name="description"
-                    placeholder="Enter Description"
-                    defaultValue={formValues.descroption}
-                    onChange={handleChange}
-                    rows={5}
-                    cols={130}
-                    />
+                    <td colSpan="7">
 
+                      <TextareaAutosize id="description" name="description"
+                          disabled={false}
+                          required
+                          maxRows = {10}
+                          minRows = {3}
+                          style={stylesTextArea}
+                          defaultValue= ''
+                          placeholder="Enter Description"
+                          onChange={handleChange}
+                           />
 
                     </td>
                 </tr>
                 <tr>
 
-                <td colSpan="6" align="right">
+                <td colSpan="8" align="right">
                   <hr/>
                   <DialogActions>
 

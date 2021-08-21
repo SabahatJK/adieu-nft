@@ -12,7 +12,7 @@ import WalletContext from './context';
 import {extractBlockchainError} from './connection'
 import moment from 'moment';
 
-import { withStyles, makeStyles, createMuiTheme } from '@material-ui/core/styles';
+import { withStyles, makeStyles, createTheme } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
@@ -49,7 +49,7 @@ const StyledTableRow = withStyles((theme) => ({
   },
 }))(TableRow);
 
-const theme = createMuiTheme({
+const theme = createTheme({
     overrides: {
         MuiTableCell: {
             root: {  //This can be referred from Material UI API documentation.
@@ -133,6 +133,8 @@ function MyRentals(props)  {
   const [isUpdated, setIsUpdated] = useState(false);
 
   const walletInfo = useContext(WalletContext);
+  const [contextWallet, setContextWallet] = useContext(WalletContext);
+
   const myBookingRef = useRef(bookings);
 
  useEffect(() => {
@@ -143,6 +145,17 @@ function MyRentals(props)  {
 
 async function loadBlockchainData(address)  {
 
+    let walletAddr;
+    if (address === undefined || address.trim() === "")
+    {
+      const obj = getCurrentWalletConnected();
+      walletAddr = obj.address;
+      setContextWallet(walletAddr);
+    }
+    else {
+      walletAddr = address;
+    }
+    setWallet(walletAddr);
     setError('');
     //setBookings([]);
 
@@ -150,16 +163,16 @@ async function loadBlockchainData(address)  {
     const bookingInstance = new web3.eth.Contract(BOOKINGMANAGER_ABI, BOOKINGMANAGER_ADDRESS)
     //setWeb3(web3);
     setBookingInstance(bookingInstance);
-    const bookingCount = await bookingInstance.methods.getCntForTenant(address).call({from: address});
+    const bookingCount = await bookingInstance.methods.getCntForTenant(address).call({from: walletAddr});
     setBookingCount(bookingCount);
     let newBookings = [];
     var i  = 0;
     for (i = 0; i < bookingCount; i++) {
       try {
 
-      const index = await bookingInstance.methods.tenantTokens(address, i).call({from: address})
+      const index = await bookingInstance.methods.tenantTokens(walletAddr, i).call({from: walletAddr})
       const booking = await bookingInstance.methods.getDetails(index).call({from: address})
-      const isRefund = await bookingInstance.methods.getRefund(booking.tokenid).call({from: address})
+      const isRefund = await bookingInstance.methods.getRefund(booking.tokenid).call({from: walletAddr})
       booking.isRefund = isRefund;
       booking.isToken = (booking._status === "3") ? true : false;
       setSetCounter(i)
@@ -234,14 +247,15 @@ async function payRent(tokenId, rent, noOfWeeks, key) {
             console.log("receipt")
             let txtHash = receipt["transactionHash"]
             setRentalTxHash(txtHash);
-            setTransitionMessage("Rent receipt TX hash : "  + txtHash );
-            setTransition(() => TransitionRight);
-            setOpenTransition(true);
             setIsRent(false);
-            setOpenBackdrop(false);
             bookings[key]._status = '3';
             bookings[key].tokenURI = tokenURI;
             setBookings(bookings)
+
+            setTransitionMessage("Rent receipt TX hash : "  + txtHash );
+            setTransition(() => TransitionRight);
+            setOpenTransition(true);
+            setOpenBackdrop(false);
 
             //loadBlockchainData();
         });
@@ -381,6 +395,8 @@ function showWidthdraw(tokenId, startDate, noOfWeeks, deposit, isRefund, key )  
               </div>
           </main>
         <br/>
+        <br/>
+
           <ThemeProvider  theme={theme}>
             <TableContainer component={Paper}>
               <Table className={classes.table} aria-label="My Rentals">

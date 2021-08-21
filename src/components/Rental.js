@@ -55,7 +55,7 @@ function Rental(props) {
       //save to state
       newProperties = newProperties.concat( property);
       setProperties(newProperties);
-      setSetCounter(i);
+      setSetCounter(i + 1);
     }
     catch(error)
     // @dev Load the properties from blockchain

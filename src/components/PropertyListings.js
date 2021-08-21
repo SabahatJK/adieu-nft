@@ -17,7 +17,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles';
+import { createTheme } from '@material-ui/core/styles';
 
 
 
@@ -45,7 +45,7 @@ const useStyles = makeStyles({
   },
 });
 
-const theme = createMuiTheme({
+const theme = createTheme({
     overrides: {
         MuiTableCell: {
             root: {  //This can be referred from Material UI API documentation.
@@ -71,11 +71,11 @@ function PropertyListings(props) {
                  return (
                    <div>
                    <br/>
-                   <ThemeProvider  theme={theme}>
-                     <TableContainer component={Paper}>
-                       <Table className={classes.table} aria-label="My Rentals">
+                   <ThemeProvider  theme={theme} >
+                     <TableContainer component={Paper} key={key}>
+                       <Table className={classes.table} aria-label="My Rentals"  key={key}>
 
-                         <TableHead>
+                         <TableHead >
                           <StyledTableRow>
 
                             <StyledTableCell align="left">Address : <span>{property.pAddr} &nbsp;</span>

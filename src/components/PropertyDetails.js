@@ -12,7 +12,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { ThemeProvider } from '@material-ui/core'
-import { createMuiTheme } from '@material-ui/core/styles';
+import { createTheme } from '@material-ui/core/styles';
 
 
 
@@ -40,7 +40,7 @@ const useStyles = makeStyles({
   },
 });
 
-const theme = createMuiTheme({
+const theme = createTheme({
     overrides: {
         MuiTableCell: {
             root: {  //This can be referred from Material UI API documentation.

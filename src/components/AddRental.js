@@ -96,7 +96,7 @@ function AddRental(props)  {
   const [tokenId, setTokenId] = useState(-1);
   const [tokenURI, setTokenURI] = useState("");
 
-  const [submitDisabled, setSubmitDisabled] = useState("");
+  const [submitDisabled, setSubmitDisabled] = useState(false);
   const [isDeposit, setIsDeposit] = useState(false);
   const [isRent, setIsRent] = useState(false);
   const [isSubmit, setIsSubmit] = useState(true);
@@ -196,7 +196,7 @@ useEffect(() => {
   if (tokenId > 0 )
   {
     try {
-      setSubmitDisabled("disabled");
+      setSubmitDisabled(true);
       setOpenBackdrop(true);
       // get the token address from the BookingManager Contract
       const tokenAddr = await bookingInstance.methods.getTokenAddress(tokenId).call({from : walletAddress});
@@ -208,7 +208,7 @@ useEffect(() => {
     } catch (error) {
       setErrors(error.message);
     } finally {
-      setSubmitDisabled("");
+      setSubmitDisabled(false);
       setOpenBackdrop(false);
 
 
@@ -248,7 +248,7 @@ function addWalletListener() {
 
     setErrors("Uploading Token URI to pinata  @ : " + pinataResponse.message);
     setOpenBackdrop(false);
-    setSubmitDisabled("");
+    setSubmitDisabled(false);
 
 
   }
@@ -265,7 +265,7 @@ function addWalletListener() {
   try {
     if (tokenId > 0 )
     {
-      setSubmitDisabled("disabled");
+      setSubmitDisabled(true);
       setOpenBackdrop(true);
       setDisabled(true);
       let txtHash;
@@ -287,23 +287,24 @@ function addWalletListener() {
             console.log("receipt")
             txtHash = receipt["transactionHash"]
             console.log(receipt["transactionHash"])
+
             getToken(tokenId);
         });
 
         setRentalTxHash("Rent Tx Hash: " + txtHash);
         setIsRent(false);
         setIsDeposit(false);
-        setIsSubmit(true);
+        setSubmitDisabled(true);
 
       }
     }
   } catch(error) {
     let sError = extractBlockchainError(error.message);
     setErrors("Rent  @ : " + sError);
-    setSubmitDisabled("");
+    setSubmitDisabled(false);
   }
   finally {
-    setSubmitDisabled("");
+    setSubmitDisabled(false);
     setOpenBackdrop(false);
   }
 }
@@ -315,7 +316,7 @@ function addWalletListener() {
       if (tokenId > 0 )
       {
           setOpenBackdrop(true);
-          setSubmitDisabled("disabled");
+          setSubmitDisabled(true);
           setDisabled(true);
           //this.setState({TokenId, tokenId})
           let txtHash;
@@ -330,7 +331,7 @@ function addWalletListener() {
             setIsRent(true);
             setIsDeposit(false);
             setIsSubmit(false);
-            setSubmitDisabled("");
+            setSubmitDisabled(false);
             rent(tokenId)
         });
       }
@@ -339,7 +340,7 @@ function addWalletListener() {
 
       let sError = extractBlockchainError(error.message);
       setErrors("Deposit  @ : " + sError);
-      setSubmitDisabled("");
+      setSubmitDisabled(false);
       setOpenBackdrop(false);
       throw (error);
     }
@@ -366,7 +367,7 @@ function addWalletListener() {
 
           }
           else {
-            setSubmitDisabled("disabled");
+            setSubmitDisabled(false);
             setDepositTxHash("");
             setRentalTxHash("");
             setReservTxHash("");
@@ -407,12 +408,12 @@ function addWalletListener() {
                                   //alert(JSON.parse(JSON.stringify(error))["message"]);
                                   let sError = extractBlockchainError(error.message);
                                   setErrors("Add Rental  @ : " + sError);
-                                  setSubmitDisabled("");
+                                  setSubmitDisabled(false);
                                   setOpenBackdrop(false);
                                   console.error(error)
                                 });
             setReservTxHash("Reservation Tx: " + txtHash)
-
+            setDisabled(true);
             setIsRent(false);
             setIsDeposit(true);
             setIsSubmit(false);
@@ -422,7 +423,7 @@ function addWalletListener() {
               let sError = extractBlockchainError(error.message);
               setErrors("Add Rental  @ : " + sError);
               setOpenBackdrop(false);
-              setSubmitDisabled("");
+
 
           }
         }
@@ -440,7 +441,7 @@ function addWalletListener() {
         setTokenURI("");
         setErrors("");
         setTokenAddr("");
-        setSubmitDisabled("");
+        setSubmitDisabled(false);
         setDisabled(false);
     };
     // Close Modal
@@ -453,8 +454,8 @@ function addWalletListener() {
       <div key={props.propertyId}>
         <Button variant="contained" onClick={openModal}>Rent</Button>
 
-        <Dialog open={modalIsOpen}  aria-labelledby="form-dialog-title">
-          <form  onSubmit={handleSubmit} >
+        <Dialog open={modalIsOpen}  aria-labelledby="form-dialog-title" >
+          <form  onSubmit={handleSubmit}  method="POST">
               <DialogContent>
                 <Backdrop className={classes.backdrop} open={openBackdrop}>
                   <CircularProgress color="inherit" />
@@ -484,6 +485,7 @@ function addWalletListener() {
 
 
                                        <Select
+                                        required
                                          id="startDate"
                                          name="startDate"
                                          value={startDate}
@@ -507,7 +509,6 @@ function addWalletListener() {
                                              disabled={disabled}
                                              type="number"
                                              InputLabelProps={{
-                                               shrink: true,
                                                required: true,
                                              }}
                                              onChange={handleChange} />
@@ -567,9 +568,9 @@ function addWalletListener() {
 
                   <div>
 
-                  {isSubmit && <Button variant="contained" type="submit">Submit</Button>}
+                  {isSubmit && <Button variant="contained" type="submit" disabled={disabled}>Submit</Button>}
 
-                 {isDeposit && <Button variant="contained" onClick={() =>deposit(tokenId)}>Depost </Button>}
+                 {isDeposit && <Button variant="contained" onClick={() =>deposit(tokenId)}>Deposit </Button>}
 
                  {isRent && <Button variant="contained" onClick={() =>rent(tokenId)}>Rent </Button>}
                  </div>
